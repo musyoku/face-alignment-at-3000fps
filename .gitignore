@@ -1,0 +1,10 @@
+# ignore all
+*
+
+# allow any
+!*.py
+!*.h
+!*.cpp
+!README.md
+!makefile
+!.gitignore
