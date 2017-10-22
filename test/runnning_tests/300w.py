@@ -147,9 +147,16 @@ def preprocess_images(directory):
 				scale = args.max_size / bbox.width()
 				image_rgb = cv2.resize(image_rgb, (args.max_size, args.max_size))
 
+			# normalize landmark location
+			# let the center of the image be the origin
+			# x: [-1, 1]
+			# y: [-1, 1]
 			for (x, y) in landmarks:
-				x = int(scale * (x - bbox.left))
-				y = int(scale * (y - bbox.top))
+				x = scale * (x - bbox.left) / bbox.width() * 2 - 1
+				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
+
+				x = int(bbox.width() / 2 + x * bbox.width() / 2)
+				y = int(bbox.height() / 2 + y * bbox.height() / 2)
 				cv2.line(image_rgb, (x - 4, y), (x + 4, y), white, 1)
 				cv2.line(image_rgb, (x, y - 4), (x, y + 4), white, 1)
 

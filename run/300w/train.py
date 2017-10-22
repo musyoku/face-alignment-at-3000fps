@@ -114,6 +114,8 @@ def preprocess_images(directory):
 	annotations = load_annotations(directory)
 	fs = os.listdir(directory)
 	num_total_images = 0
+	dataset_images = []
+	dataset_landmarks = []
 	mean_normalized_landmarks = []
 	for _ in range(68):
 		mean_normalized_landmarks.append([0, 0])
@@ -144,6 +146,8 @@ def preprocess_images(directory):
 				scale = args.max_image_size / bbox.width()
 				image_gray = cv2.resize(image_gray, (args.max_image_size, args.max_image_size))
 
+			dataset_images.append(image_gray)
+
 			# normalize landmark location
 			# x: [-1, 1]
 			# y: [-1, 1]
@@ -153,16 +157,9 @@ def preprocess_images(directory):
 				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
 				normalized_landmarks.append((x, y))
 
-				mean_normalized_landmarks[feature_index][0] += x
-				mean_normalized_landmarks[feature_index][1] += y
+			dataset_landmarks.append(normalized_landmarks)
 
-			num_total_images += 1
-
-	for feature_index in range(len(mean_normalized_landmarks)):
-		mean_normalized_landmarks[feature_index][0] /= num_total_images
-		mean_normalized_landmarks[feature_index][1] /= num_total_images
-
-	return num_total_images, mean_normalized_landmarks
+	return dataset_images, dataset_landmarks
 
 def main():
 	assert args.dataset_directory is not None
@@ -172,36 +169,40 @@ def main():
 	except:
 		pass
 
-	num_total_images = 0
-	mean_normalized_landmarks = []
-	for _ in range(68):
-		mean_normalized_landmarks.append([0, 0])
+	images_train = []
+	landmarks_train = []
 	targets = ["01_Indoor", "02_Outdoor"]
 
+	mean_shape = []
+	for _ in range(68):
+		mean_shape.append([0, 0])
+
 	for target in targets:
-		_num_total_images, _mean_normalized_landmarks = preprocess_images(os.path.join(args.dataset_directory, target))
-		num_total_images += _num_total_images
+		images, landmarks = preprocess_images(os.path.join(args.dataset_directory, target))
+		images_train += images
+		landmarks_train += landmarks
 
-		for feature_index in range(len(_mean_normalized_landmarks)):
-			mean_normalized_landmarks[feature_index][0] += _mean_normalized_landmarks[feature_index][0]
-			mean_normalized_landmarks[feature_index][1] += _mean_normalized_landmarks[feature_index][1]
+	# calculate mean shape
+	for landmarks in landmarks_train:
+		for feature_index, (x, y) in enumerate(landmarks):
+			mean_shape[feature_index][0] += x
+			mean_shape[feature_index][1] += y
+		
+	for feature_index in range(len(mean_shape)):
+		mean_shape[feature_index][0] /= len(landmarks_train)
+		mean_shape[feature_index][1] /= len(landmarks_train)
 
-	for feature_index in range(len(mean_normalized_landmarks)):
-		mean_normalized_landmarks[feature_index][0] /= len(targets)
-		mean_normalized_landmarks[feature_index][1] /= len(targets)
-
+	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
 	white = (255, 255, 255)
-	for (x, y) in mean_normalized_landmarks:
+	for (x, y) in mean_shape:
 		x = int(250 + x * 250)
 		y = int(250 + y * 250)
 		cv2.line(mean_shape_image, (x - 4, y), (x + 4, y), white, 1)
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
-
 	cv2.imwrite("mean.jpg", mean_shape_image)
-	print(mean_normalized_landmarks)
 
-	print("#images", num_total_images)
+	print("#images", len(images_train))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

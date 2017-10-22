@@ -1,10 +1,17 @@
 # Face Alignment at 3000 FPS via Regressing Local Binary Features
 
+## Referrences
+
+- [Face Alignment at 3000 FPS via Regressing Local Binary Features](https://pdfs.semanticscholar.org/d59f/b96a60168f2baec6f5c61b82393576c33fb7.pdf)
+- [One Millisecond Face Alignment with an Ensemble of Regression Trees](https://pdfs.semanticscholar.org/d78b/6a5b0dcaa81b1faea5fb0000045a62513567.pdf)
+- [Face Alignment by Explicit Shape Regression](https://www.microsoft.com/en-us/research/wp-content/uploads/2013/01/Face-Alignment-by-Explicit-Shape-Regression.pdf)
+- [Robust Face Landmark Estimation under Occlusion](http://www.vision.caltech.edu/~xpburgos/papers/ICCV13%20Burgos-Artizzu.pdf)
+
 ## Requirements
 
 - Python 3
 - OpenCV 3
-- Boost
+- Boost 1.65
 - Dlib
 
 ## Installation
