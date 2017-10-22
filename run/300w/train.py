@@ -1,6 +1,7 @@
 import argparse, os, sys
 import cv2
 import numpy as np
+import lbf
 
 class BoundingBox:
 	def __init__(self):
@@ -108,7 +109,6 @@ def get_bounding_box(landmarks, image_height, image_width):
 	assert bbox.width() == bbox.height()
 	return bbox
 
-
 def preprocess_images(directory):
 	print("processing", directory)
 	annotations = load_annotations(directory)
@@ -161,17 +161,11 @@ def preprocess_images(directory):
 
 	return dataset_images, dataset_landmarks
 
-def main():
-	assert args.dataset_directory is not None
-
-	try:
-		os.mkdir(args.output_directory)
-	except:
-		pass
-
+def build_corpus():
 	images_train = []
 	landmarks_train = []
-	targets = ["01_Indoor", "02_Outdoor"]
+	# targets = ["01_Indoor", "02_Outdoor"]
+	targets = ["00_Test"]
 
 	mean_shape = []
 	for _ in range(68):
@@ -191,6 +185,29 @@ def main():
 	for feature_index in range(len(mean_shape)):
 		mean_shape[feature_index][0] /= len(landmarks_train)
 		mean_shape[feature_index][1] /= len(landmarks_train)
+
+	corpus = lbf.corpus()
+	for image, landmarks in zip(images_train, landmarks_train):
+		print("Boost value")
+		corpus.add_training_data(image, np.asarray(landmarks, dtype=np.float32))
+
+		print("True value")
+		for i in range(5):
+			for j in range(5):
+				print(i, j, image[i, j])
+
+	return corpus, mean_shape
+
+def main():
+	assert args.dataset_directory is not None
+
+	try:
+		os.mkdir(args.output_directory)
+	except:
+		pass
+
+	# build corpus
+	corpus, mean_shape = build_corpus()
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)

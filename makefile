@@ -1,14 +1,16 @@
 CC = g++
 BOOST = /home/stark/boost
 INCLUDE = `python3-config --includes` `pkg-config --cflags opencv` -std=c++11 -I$(BOOST)/include
-LDFLAGS = `python3-config --ldflags` `pkg-config --libs opencv` -lboost_serialization -lboost_python3 -L$(BOOST)/lib
-SOFLAGS = -shared -fPIC -march=native
+LDFLAGS = `python3-config --ldflags` `pkg-config --libs opencv` -lboost_serialization -lboost_numpy3 -lboost_python3 -L$(BOOST)/lib
+SOFLAGS = -shared -fPIC -march=native -O0 -g
 
 install: ## Python用ライブラリをコンパイル
-	$(CC) $(INCLUDE) $(SOFLAGS) -o run/ithmm.so src/python.cpp src/ithmm/*.cpp src/python/*.cpp $(LDFLAGS) -O3
+	$(CC) $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/python/*.cpp $(LDFLAGS)
 
 install_ubuntu: ## Python用ライブラリをコンパイル
-	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/ithmm.so src/python.cpp src/ithmm/*.cpp src/python/*.cpp $(LDFLAGS) -O3
+	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/randomforest/*.cpp src/python/*.cpp src/liblinear/*.cpp src/liblinear/blas/*.c $(LDFLAGS)
+	cp run/lbf.so run/300w/lbf.so
+	rm -rf run/lbf.so
 
 check_includes:	## Python.hの場所を確認
 	python3-config --includes
@@ -21,8 +23,8 @@ module_tests: ## 各モジュールのテスト.
 	./test/module_tests/randomforest/node
 
 running_tests:	## 学習テスト
-	$(CC) test/running_tests/train.cpp src/ithmm/*.cpp src/python/*.cpp -o test/running_tests/train $(INCLUDE) $(LDFLAGS) -O3 -Wall
-	$(CC) test/running_tests/save.cpp src/ithmm/*.cpp src/python/*.cpp -o test/running_tests/save $(INCLUDE) $(LDFLAGS) -O0 -g -Wall
+	$(CC) test/running_tests/train.cpp src/lbf/*.cpp src/python/*.cpp -o test/running_tests/train $(INCLUDE) $(LDFLAGS) -O3 -Wall
+	$(CC) test/running_tests/save.cpp src/lbf/*.cpp src/python/*.cpp -o test/running_tests/save $(INCLUDE) $(LDFLAGS) -O0 -g -Wall
 
 .PHONY: help
 help:

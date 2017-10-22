@@ -1,8 +1,10 @@
 #pragma once
 
-namespace randomforest {
-	class Tree {
-	public:
-		Tree(){};
-	};
+namespace lbf {
+	namespace randomforest {
+		class Tree {
+		public:
+			Tree(){};
+		};
+	}
 }
