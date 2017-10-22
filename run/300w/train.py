@@ -162,8 +162,8 @@ def preprocess_images(directory):
 	return dataset_images, dataset_landmarks
 
 def build_corpus():
-	images_train = []
-	landmarks_train = []
+	image_list_train = []
+	shape_list_train = []
 	# targets = ["01_Indoor", "02_Outdoor"]
 	targets = ["00_Test"]
 
@@ -172,29 +172,24 @@ def build_corpus():
 		mean_shape.append([0, 0])
 
 	for target in targets:
-		images, landmarks = preprocess_images(os.path.join(args.dataset_directory, target))
-		images_train += images
-		landmarks_train += landmarks
+		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
+		image_list_train += images
+		shape_list_train += shape
 
 	# calculate mean shape
-	for landmarks in landmarks_train:
-		for feature_index, (x, y) in enumerate(landmarks):
+	for shape in shape_list_train:
+		for feature_index, (x, y) in enumerate(shape):
 			mean_shape[feature_index][0] += x
 			mean_shape[feature_index][1] += y
 		
 	for feature_index in range(len(mean_shape)):
-		mean_shape[feature_index][0] /= len(landmarks_train)
-		mean_shape[feature_index][1] /= len(landmarks_train)
+		mean_shape[feature_index][0] /= len(shape_list_train)
+		mean_shape[feature_index][1] /= len(shape_list_train)
 
 	corpus = lbf.corpus()
-	for image, landmarks in zip(images_train, landmarks_train):
-		print("Boost value")
-		corpus.add_training_data(image, np.asarray(landmarks, dtype=np.float32))
-
-		print("True value")
-		for i in range(5):
-			for j in range(5):
-				print(i, j, image[i, j])
+	for image, shape in zip(image_list_train, shape_list_train):
+		shape = np.asarray(shape, dtype=np.float64)
+		corpus.add_training_data(image, shape)
 
 	return corpus, mean_shape
 
@@ -219,7 +214,7 @@ def main():
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
 	cv2.imwrite("mean.jpg", mean_shape_image)
 
-	print("#images", len(images_train))
+	print("#images", len(image_list_train))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
