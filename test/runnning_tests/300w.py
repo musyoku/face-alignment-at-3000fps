@@ -64,10 +64,12 @@ def expand_bounding_box(bbox, image_height, image_width, padding):
 	padding = min(padding, image_width - bbox.right)
 	padding = min(padding, image_height - bbox.bottom)
 
-	bbox.left = int(max(0, bbox.left - padding))
-	bbox.top = int(max(0, bbox.top - padding))
-	bbox.right = int(min(image_width, bbox.right + padding))
-	bbox.bottom = int(min(image_height, bbox.bottom + padding))
+	bbox.left = bbox.left - padding
+	bbox.top = bbox.top - padding
+	bbox.right = bbox.right + padding
+	bbox.bottom = bbox.bottom + padding
+
+	bbox.cast()
 
 def get_bounding_box(landmarks, image_height, image_width):
 	bbox = BoundingBox()
@@ -116,16 +118,8 @@ def get_bounding_box(landmarks, image_height, image_width):
 			bbox.move_x(image_width - bbox.right)
 			assert bbox.left >= 0
 
-	bbox_width = bbox.width()
-	bbox_height = bbox.height()
-	assert bbox_width == bbox_height
-
-	padding = bbox_width * 0.3
-
-	expand_bounding_box(bbox, image_height, image_width, padding)
-
+	assert bbox.width() == bbox.height()
 	return bbox
-
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -167,6 +161,8 @@ def main():
 
 		try:
 			bbox = get_bounding_box(landmarks, image_height, image_width)
+			padding = bbox.width() * 0.3
+			expand_bounding_box(bbox, image_height, image_width, padding)
 		except Exception as e:
 			import traceback
 			traceback.print_exc()
