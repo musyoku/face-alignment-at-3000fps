@@ -11,24 +11,24 @@
 
 ### macOS
 
-#### Python 3
+Python 3
 
 `brew install python3`
 
-#### Boost
+Boost
 
 `brew install boost-python --with-python3`
 
 ### Ubuntu
 
-#### Boost
+Boost
 
 ```
 ./bootstrap.sh --with-python=python3 --with-python-version=3.5
 ./b2 python=3.5 -d2 -j4 --prefix YOUR_BOOST_DIR install
 ```
 
-#### Dlib
+Dlib
 
 ```
 sudo apt install libomp-dev

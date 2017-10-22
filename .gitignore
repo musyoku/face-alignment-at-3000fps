@@ -2,9 +2,10 @@
 *
 
 # allow any
+!*/
+!.gitignore
 !*.py
 !*.h
 !*.cpp
 !README.md
 !makefile
-!.gitignore
