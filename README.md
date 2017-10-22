@@ -37,5 +37,17 @@ pip install dlib --user
 
 ## Datasets
 
-- [HELEN](http://www.ifp.illinois.edu/~vuongle2/helen/)
-- [300-W](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
+###  300 Faces in the Wild
+
+Download `300w.zip.001`, `300w.zip.002`, `300w.zip.003`, `300w.zip.004` from [ibug.doc.ic.ac.uk/resources/facial-point-annotations/](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
+
+### IBUG
+
+Download `afw.zip`, `ibug.zip`, `lfpw.zip`, `helen.zip` from [ibug.doc.ic.ac.uk/resources/facial-point-annotations/](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
+
+or from Google Drive.
+
+- [afw.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRMUdtNGYzNWJJUmc)
+- [ibug.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRR2dMd29Lakt0UDg)
+- [lfpw.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRTUhuMnExdDlBRFk)
+- [helen.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRazF3MGU0enZkSVk)

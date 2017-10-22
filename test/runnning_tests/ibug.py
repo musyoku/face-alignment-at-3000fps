@@ -168,8 +168,10 @@ def main():
 		pass
 
 	num_total_images = 0
-	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "01_Indoor"))
-	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "02_Outdoor"))
+	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "helen", "trainset"))
+	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "lfpw", "trainset"))
+	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "afw"))
+	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "ibug"))
 	print("#images", num_total_images)
 
 if __name__ == "__main__":
