@@ -1,3 +1,6 @@
+#include <cassert>
+#include <set>
+#include "../sampler.h"
 #include "forest.h"
 
 namespace lbf {
@@ -14,9 +17,23 @@ namespace lbf {
 				_trees.push_back(tree);
 			}
 		}
-		void Forest::train(std::vector<FeatureLocation> &sampled_feature_locations, cv::Mat_<int> &pixel_differences, std::vector<cv::Mat_<double>> &target_shapes){
+		void Forest::train(std::vector<FeatureLocation> &feature_locations, 
+						   cv::Mat_<int> &pixel_differences, 
+						   std::vector<cv::Mat_<double>> &target_shapes)
+		{
+			assert(feature_locations.size() == pixel_differences.rows);
+			assert(pixel_differences.cols == target_shapes.size());
+			int num_data = pixel_differences.cols;
 			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
-
+				// bootstrap
+				std::set<int> sampled_indices;
+				for(int n = 0;n < num_data;n++){
+					int index = sampler::uniform_int(0, num_data - 1);
+					sampled_indices.insert(index);
+				}
+				// build tree
+				Tree* tree = _trees[tree_index];
+				tree->train(sampled_indices, feature_locations, pixel_differences, target_shapes);
 			}
 		}
 	}
