@@ -1,5 +1,6 @@
 import argparse, os, sys
 import cv2
+import numpy as np
 
 class BoundingBox:
 	def __init__(self):
@@ -107,12 +108,17 @@ def get_bounding_box(landmarks, image_height, image_width):
 	assert bbox.width() == bbox.height()
 	return bbox
 
-
 def preprocess_images(directory):
 	print("processing", directory)
 	annotations = load_annotations(directory)
 	fs = os.listdir(directory)
 	num_total_images = 0
+	dataset_images = []
+	dataset_landmarks = []
+	mean_normalized_landmarks = []
+	for _ in range(68):
+		mean_normalized_landmarks.append([0, 0])
+
 	for filename in fs:
 		if filename.endswith(".png") or filename.endswith("jpg"):
 			image_rgb = cv2.imread(os.path.join(directory, filename))
@@ -122,17 +128,9 @@ def preprocess_images(directory):
 			filename = filename.replace(".jpg", "")
 			assert filename in annotations
 			landmarks = annotations[filename]
-			white = (255, 255, 255)
 
 			image_height = image_rgb.shape[0]
 			image_width = image_rgb.shape[1]
-
-			landmark_center = [0, 0]
-			for (x, y) in landmarks:
-				landmark_center[0] += x
-				landmark_center[1] += y
-			landmark_center[0] = int(landmark_center[0] / len(landmarks))
-			landmark_center[1] = int(landmark_center[1] / len(landmarks))
 
 			try:
 				bbox = get_bounding_box(landmarks, image_height, image_width)
@@ -141,30 +139,62 @@ def preprocess_images(directory):
 			except Exception as e:
 				continue
 
-			image_rgb = image_rgb[bbox.top:bbox.bottom + 1, bbox.left:bbox.right + 1]
+			image_gray = image_gray[bbox.top:bbox.bottom + 1, bbox.left:bbox.right + 1]
 			scale = 1.0
-			if bbox.width() > args.max_size:
-				scale = args.max_size / bbox.width()
-				image_rgb = cv2.resize(image_rgb, (args.max_size, args.max_size))
+			if bbox.width() > args.max_image_size:
+				scale = args.max_image_size / bbox.width()
+				image_gray = cv2.resize(image_gray, (args.max_image_size, args.max_image_size))
+
+			dataset_images.append(image_gray)
 
 			# normalize landmark location
-			# let the center of the image be the origin
 			# x: [-1, 1]
 			# y: [-1, 1]
-			for (x, y) in landmarks:
+			normalized_landmarks = []
+			for feature_index, (x, y) in enumerate(landmarks):
 				x = scale * (x - bbox.left) / bbox.width() * 2 - 1
 				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
+				normalized_landmarks.append((x, y))
 
-				x = int(bbox.width() / 2 + x * bbox.width() / 2)
-				y = int(bbox.height() / 2 + y * bbox.height() / 2)
-				
-				cv2.line(image_rgb, (x - 4, y), (x + 4, y), white, 1)
-				cv2.line(image_rgb, (x, y - 4), (x, y + 4), white, 1)
+			dataset_landmarks.append(normalized_landmarks)
 
-			cv2.imwrite(os.path.join(args.output_directory, "%s.jpg" % filename), image_rgb)
-			num_total_images += 1
+	return dataset_images, dataset_landmarks
 
-	return num_total_images
+def build_corpus():
+	image_list_train = []
+	shape_list_train = []
+	targets = ["01_Indoor", "02_Outdoor"]
+
+	mean_shape = []
+	for _ in range(68):
+		mean_shape.append([0, 0])
+
+	for target in targets:
+		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
+		image_list_train += images
+		shape_list_train += shape
+
+	# calculate mean shape
+	for shape in shape_list_train:
+		for feature_index, (x, y) in enumerate(shape):
+			mean_shape[feature_index][0] += x
+			mean_shape[feature_index][1] += y
+		
+	for feature_index in range(len(mean_shape)):
+		mean_shape[feature_index][0] /= len(shape_list_train)
+		mean_shape[feature_index][1] /= len(shape_list_train)
+
+	return image_list_train, shape_list_train, mean_shape
+
+def plot_shape(shape, name):
+	image = np.zeros((500, 500), dtype=np.uint8)
+	white = (255, 255, 255)
+	for (x, y) in shape:
+		x = int(250 + x * 250)
+		y = int(250 + y * 250)
+		cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
+		cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+	cv2.imwrite(os.path.join(args.output_directory, "{}.png".format(name)), image)
 
 def main():
 	assert args.dataset_directory is not None
@@ -175,15 +205,36 @@ def main():
 	except:
 		pass
 
-	num_total_images = 0
-	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "01_Indoor"))
-	num_total_images += preprocess_images(os.path.join(args.dataset_directory, "02_Outdoor"))
-	print("#images", num_total_images)
+	# build corpus
+	image_list_train, shape_list_train, mean_shape = build_corpus()
+	mean_shape = np.asarray(mean_shape, dtype=np.float64)
+
+	# save mean shape
+	plot_shape(mean_shape, "mean")
+
+	# rigid transform
+	for index, (image, shape) in enumerate(zip(image_list_train, shape_list_train)):
+		shape = np.asarray(shape, dtype=np.float64)
+
+		mat = cv2.estimateRigidTransform(shape, mean_shape, False)
+		if mat is None:
+			print("Error estimating rigid transform of", index)
+			continue
+		rotation = mat[:, :2]
+		shift = mat[:, 2]
+
+		normalized_shape = np.transpose(np.dot(rotation, shape.T) + shift[:, None], (1, 0))
+
+		# save normalized shape
+		plot_shape(shape, "{}_original".format(index))
+		plot_shape(normalized_shape, "{}_normalized".format(index))
+
+	print("#images", len(image_list_train))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--output-directory", "-out", type=str, default=None)
-	parser.add_argument("--max-size", "-size", type=int, default=500)
+	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	args = parser.parse_args()
 	main()
