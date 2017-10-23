@@ -10,5 +10,9 @@ namespace lbf {
 			a = _a;
 			b = _b;
 		}
+		FeatureLocation(){
+			a = cv::Point2d(0.0, 0.0);
+			b = cv::Point2d(0.0, 0.0);
+		};
 	};
 }
