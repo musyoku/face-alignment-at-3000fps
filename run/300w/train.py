@@ -232,10 +232,22 @@ def main():
 						  mean_shape_ndarray=mean_shape, 
 						  augmentation_size=args.augmentation_size)
 
+	# initlaize model
+	model = lbf.model(num_stages=args.num_stages,
+					  num_trees_in_each_stage=args.num_trees,
+					  tree_depth=args.tree_depth)
+
+	# training
+	trainer = lbf.trainer(dataset=dataset, model=model)
+
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
+	parser.add_argument("--num-stages", "-stages", type=int, default=5)
+	parser.add_argument("--num-trees", "-trees", type=int, default=1200)
+	parser.add_argument("--tree-depth", "-depth", type=int, default=7)
 	args = parser.parse_args()
 	main()
