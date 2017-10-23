@@ -148,23 +148,23 @@ def preprocess_images(directory):
 
 			dataset_images.append(image_gray)
 
-			# normalize landmark location
+			# localize landmark location
 			# x: [-1, 1]
 			# y: [-1, 1]
-			normalized_landmarks = []
+			localized_landmarks = []
 			for feature_index, (x, y) in enumerate(landmarks):
 				x = scale * (x - bbox.left) / bbox.width() * 2 - 1
 				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
-				normalized_landmarks.append((x, y))
+				localized_landmarks.append((x, y))
 
-			dataset_landmarks.append(normalized_landmarks)
+			dataset_landmarks.append(localized_landmarks)
 
 	return dataset_images, dataset_landmarks
 
 def build_corpus():
 	image_list_train = []
 	shape_list_train = []
-	# targets = ["01_Indoor", "02_Outdoor"]
+	targets = ["01_Indoor", "02_Outdoor"]
 	targets = ["00_Test"]
 
 	mean_shape = []
@@ -186,10 +186,22 @@ def build_corpus():
 		mean_shape[feature_index][0] /= len(shape_list_train)
 		mean_shape[feature_index][1] /= len(shape_list_train)
 
+	mean_shape = np.asarray(mean_shape, dtype=np.float64)
 	corpus = lbf.corpus()
+
 	for image, shape in zip(image_list_train, shape_list_train):
 		shape = np.asarray(shape, dtype=np.float64)
-		corpus.add_training_data(image, shape)
+
+		# normalize shape
+		mat = cv2.estimateRigidTransform(shape, mean_shape, False)
+		if mat is None:
+			continue
+
+		rotation = mat[:, :2]
+		shift = mat[:, 2]
+		normalized_shape = np.transpose(np.dot(rotation, shape.T) + shift[:, None], (1, 0))
+
+		corpus.add_training_data(image, shape, normalized_shape)
 
 	return corpus, mean_shape
 
@@ -203,6 +215,7 @@ def main():
 
 	# build corpus
 	corpus, mean_shape = build_corpus()
+	print("#images:", corpus.get_num_training_images())
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -214,11 +227,15 @@ def main():
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
 	cv2.imwrite("mean.jpg", mean_shape_image)
 
-	print("#images", len(image_list_train))
+	# initialize dataset
+	dataset = lbf.dataset(corpus=corpus, 
+						  mean_shape_ndarray=mean_shape, 
+						  augmentation_size=args.augmentation_size)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
+	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	args = parser.parse_args()
 	main()

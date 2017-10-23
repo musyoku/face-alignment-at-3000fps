@@ -8,7 +8,7 @@ install: ## Python用ライブラリをコンパイル
 	$(CC) $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/python/*.cpp $(LDFLAGS)
 
 install_ubuntu: ## Python用ライブラリをコンパイル
-	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/randomforest/*.cpp src/python/*.cpp src/liblinear/*.cpp src/liblinear/blas/*.c $(LDFLAGS)
+	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 	cp run/lbf.so run/300w/lbf.so
 	rm -rf run/lbf.so
 

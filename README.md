@@ -6,6 +6,7 @@
 - [One Millisecond Face Alignment with an Ensemble of Regression Trees](https://pdfs.semanticscholar.org/d78b/6a5b0dcaa81b1faea5fb0000045a62513567.pdf)
 - [Face Alignment by Explicit Shape Regression](https://www.microsoft.com/en-us/research/wp-content/uploads/2013/01/Face-Alignment-by-Explicit-Shape-Regression.pdf)
 - [Robust Face Landmark Estimation under Occlusion](http://www.vision.caltech.edu/~xpburgos/papers/ICCV13%20Burgos-Artizzu.pdf)
+- [freesouls/face-alignment-at-3000fps](https://github.com/freesouls/face-alignment-at-3000fps)
 
 ## Requirements
 
