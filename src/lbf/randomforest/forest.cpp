@@ -14,5 +14,8 @@ namespace lbf {
 				_trees.push_back(tree);
 			}
 		}
+		void Forest::train(cv::Mat_<int> &pixel_differences){
+			
+		}
 	}
 }

@@ -15,6 +15,7 @@ namespace lbf {
 			std::vector<Tree*> _trees;
 			Forest(){};
 			Forest(int stage, int landmark_index, int num_trees, double radius, int tree_depth);
+			void train(cv::Mat_<int> &pixel_differences);
 		};
 	}
 }

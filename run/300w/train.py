@@ -245,6 +245,7 @@ def main():
 	trainer = lbf.trainer(dataset=dataset, 
 						  model=model,
 						  num_features_to_sample=args.num_features)
+	trainer.train_local_binary_features()
 
 
 if __name__ == "__main__":
