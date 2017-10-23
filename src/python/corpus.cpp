@@ -7,13 +7,13 @@ namespace np = boost::python::numpy;
 namespace lbf {
 	namespace python {
 		void Corpus::add_training_data(np::ndarray image_ndarray, np::ndarray shape_ndarray, boost::python::numpy::ndarray normalized_shape_ndarray){
-			_add_image_to(image_ndarray, _image_vec_train);
-			_add_shape_to(shape_ndarray, _shape_vec_train);
-			_add_shape_to(normalized_shape_ndarray, _normalized_shape_vec_train);
+			_add_image_to(image_ndarray, _images_train);
+			_add_shape_to(shape_ndarray, _shapes_train);
+			_add_shape_to(normalized_shape_ndarray, _normalized_shapes_train);
 		}
 		void Corpus::add_test_data(np::ndarray image_ndarray, np::ndarray shape_ndarray){
-			_add_image_to(image_ndarray, _image_vec_test);
-			_add_shape_to(shape_ndarray, _shape_vec_test);
+			_add_image_to(image_ndarray, _images_test);
+			_add_shape_to(shape_ndarray, _shapes_test);
 		}
 		void Corpus::_add_image_to(boost::python::numpy::ndarray &image_ndarray, std::vector<cv::Mat_<uint8_t>> &image_vec){
 			auto size = image_ndarray.get_shape();
@@ -40,10 +40,10 @@ namespace lbf {
 			shape_vec.push_back(shape);
 		}
 		int Corpus::get_num_training_images(){
-			return _image_vec_train.size();
+			return _images_train.size();
 		}
 		int Corpus::get_num_test_images(){
-			return _image_vec_test.size();
+			return _images_test.size();
 		}
 	}
 }

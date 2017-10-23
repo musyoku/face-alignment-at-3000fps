@@ -4,15 +4,15 @@
 namespace lbf {
 	class FeatureLocation {
 	public:
-		cv::Point2d start;
-		cv::Point2d end;
+		cv::Point2d a;
+		cv::Point2d b;
 		FeatureLocation(cv::Point2d a, cv::Point2d b){
-			start = a;
-			end = b;
+			a = a;
+			b = b;
 		}
 		FeatureLocation(){
-			start = cv::Point2d(0.0, 0.0);
-			end = cv::Point2d(0.0, 0.0);
+			a = cv::Point2d(0.0, 0.0);
+			b = cv::Point2d(0.0, 0.0);
 		};
 	};
 }

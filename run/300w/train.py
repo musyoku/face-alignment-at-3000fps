@@ -233,12 +233,18 @@ def main():
 						  augmentation_size=args.augmentation_size)
 
 	# initlaize model
+	feature_radius = [0.29, 0.21, 0.16, 0.12, 0.08, 0.04]
+	assert len(feature_radius) == args.num_stages
 	model = lbf.model(num_stages=args.num_stages,
-					  num_trees_in_each_stage=args.num_trees,
-					  tree_depth=args.tree_depth)
+					  num_trees_per_forest=args.num_trees,
+					  tree_depth=args.tree_depth,
+					  num_landmarks=len(mean_shape),
+					  feature_radius=feature_radius)
 
 	# training
-	trainer = lbf.trainer(dataset=dataset, model=model)
+	trainer = lbf.trainer(dataset=dataset, 
+						  model=model,
+						  num_features_to_sample=args.num_features)
 
 
 if __name__ == "__main__":
@@ -246,8 +252,9 @@ if __name__ == "__main__":
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
-	parser.add_argument("--num-stages", "-stages", type=int, default=5)
-	parser.add_argument("--num-trees", "-trees", type=int, default=1200)
+	parser.add_argument("--num-stages", "-stages", type=int, default=6)
+	parser.add_argument("--num-trees", "-trees", type=int, default=12)
+	parser.add_argument("--num-features", "-features", type=int, default=1200)
 	parser.add_argument("--tree-depth", "-depth", type=int, default=7)
 	args = parser.parse_args()
 	main()
