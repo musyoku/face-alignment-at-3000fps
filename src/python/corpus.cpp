@@ -45,5 +45,17 @@ namespace lbf {
 		int Corpus::get_num_test_images(){
 			return _images_test.size();
 		}
+		cv::Mat_<double> & Corpus::get_training_shape_of(int data_index){
+			assert(data_index < _shapes_train.size());
+			return _shapes_train[data_index];
+		}
+		cv::Mat_<double> & Corpus::get_training_normalized_shape_of(int data_index){
+			assert(data_index < _normalized_shapes_train.size());
+			return _normalized_shapes_train[data_index];
+		}
+		cv::Mat_<uint8_t> & Corpus::get_training_image_of(int data_index){
+			assert(data_index < _images_train.size());
+			return _images_train[data_index];
+		}
 	}
 }

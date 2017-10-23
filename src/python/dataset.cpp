@@ -24,7 +24,7 @@ namespace lbf {
 
 			// sample shapes to augment data
 			int num_training_images = corpus->get_num_training_images();
-			_initial_shape_indices_of_data.reserve(num_training_images);
+			_augmented_initial_shape_indices_of_data.reserve(num_training_images);
 
 			for(int data_index = 0;data_index < num_training_images;data_index++){
 				std::vector<int> initial_shape_indices;
@@ -38,7 +38,7 @@ namespace lbf {
 					initial_shape_indices.push_back(index);
 				}
 
-				_initial_shape_indices_of_data.push_back(initial_shape_indices);
+				_augmented_initial_shape_indices_of_data.push_back(initial_shape_indices);
 			}
 		}
 	}

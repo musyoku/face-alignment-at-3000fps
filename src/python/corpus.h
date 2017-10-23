@@ -19,6 +19,9 @@ namespace lbf {
 			void add_test_data(boost::python::numpy::ndarray image_ndarray, boost::python::numpy::ndarray shape_ndarray);
 			int get_num_training_images();
 			int get_num_test_images();
+			cv::Mat_<double> & get_training_shape_of(int data_index);
+			cv::Mat_<double> & get_training_normalized_shape_of(int data_index);
+			cv::Mat_<uint8_t> & get_training_image_of(int data_index);
 		};
 	}
 }

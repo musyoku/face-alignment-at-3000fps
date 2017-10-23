@@ -14,8 +14,10 @@ namespace lbf {
 				_trees.push_back(tree);
 			}
 		}
-		void Forest::train(cv::Mat_<int> &pixel_differences){
-			
+		void Forest::train(std::vector<FeatureLocation> &sampled_feature_locations, cv::Mat_<int> &pixel_differences, std::vector<cv::Mat_<double>> &target_shapes){
+			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
+
+			}
 		}
 	}
 }

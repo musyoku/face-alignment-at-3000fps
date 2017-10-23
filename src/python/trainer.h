@@ -10,8 +10,20 @@ namespace lbf {
 			Dataset* _dataset;
 			Model* _model;
 			int _num_features_to_sample;
+			int _num_augmented_data;
+			std::vector<cv::Mat_<double>> _augmented_predicted_shapes;
+			std::vector<cv::Mat_<double>> _augmented_target_shapes;
+			std::vector<int> _augmented_indices_to_data_index;
+			std::vector<std::vector<FeatureLocation>> _sampled_feature_locations_at_stage;
+			void _train_forest_of(int stage, int landmark_index);
+			void _compute_pixel_differences(cv::Mat_<double> &shape,
+											cv::Mat_<uint8_t> &image,
+											cv::Mat_<int> &pixel_differences,
+											std::vector<FeatureLocation> &sampled_feature_locations,
+											int data_index, 
+											int landmark_index);
+			cv::Mat_<uint8_t> & get_image_by_augmented_index(int augmented_data_index);
 		public:
-			std::vector<std::vector<FeatureLocation>> _sampled_feature_locations_of_stage;
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
 			void train_local_binary_features();
 		};

@@ -244,7 +244,7 @@ def main():
 	# training
 	trainer = lbf.trainer(dataset=dataset, 
 						  model=model,
-						  num_features_to_sample=args.num_features)
+						  num_features_to_sample=args.num_training_features)
 	trainer.train_local_binary_features()
 
 
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=6)
 	parser.add_argument("--num-trees", "-trees", type=int, default=12)
-	parser.add_argument("--num-features", "-features", type=int, default=1200)
+	parser.add_argument("--num-training-features", "-features", type=int, default=500)
 	parser.add_argument("--tree-depth", "-depth", type=int, default=7)
 	args = parser.parse_args()
 	main()

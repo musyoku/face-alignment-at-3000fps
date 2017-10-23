@@ -13,15 +13,15 @@ namespace lbf {
 			assert(num_stages == boost::python::len(feature_radius));
 			for(int stage = 0;stage < num_stages;stage++){
 				double radius = boost::python::extract<double>(feature_radius[stage]);
-				_local_radius_of_stage.push_back(radius);
+				_local_radius_at_stage.push_back(radius);
 			}
 
-			_forest_of_stage.resize(num_stages);
+			_forest_at_stage.resize(num_stages);
 			for(int stage = 0;stage < _num_stages;stage++){
-				std::vector<Forest*> &forest_of_landmark = _forest_of_stage[stage];
+				std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];
 				forest_of_landmark.resize(num_landmarks);
 				for(int landmark_index = 0;landmark_index < num_landmarks;landmark_index++){
-					Forest* forest = new Forest(stage, landmark_index, _num_trees_per_forest, _local_radius_of_stage[stage], _tree_depth);
+					Forest* forest = new Forest(stage, landmark_index, _num_trees_per_forest, _local_radius_at_stage[stage], _tree_depth);
 					forest_of_landmark[landmark_index] = forest;
 				}
 			}
@@ -29,7 +29,7 @@ namespace lbf {
 		Forest* Model::get_forest_of(int stage, int landmark_index){
 			assert(stage < _num_stages);
 			assert(landmark_index < _num_landmarks);
-			std::vector<Forest*> &forest_of_landmark = _forest_of_stage[stage];
+			std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];
 			return forest_of_landmark[landmark_index];
 		}
 	}
