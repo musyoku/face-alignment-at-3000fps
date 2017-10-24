@@ -54,5 +54,12 @@ namespace lbf {
 			assert(tree_index < _num_trees);
 			return _trees[tree_index];	
 		}
+		int Forest::get_num_trees(){
+			assert(_num_trees == _trees.size());
+			return _trees.size();
+		}
+		int Forest::get_num_total_leaves(){
+			return _num_total_leaves;
+		}
 	}
 }

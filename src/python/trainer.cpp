@@ -96,8 +96,8 @@ namespace lbf {
 				int num_total_leaves = 0;
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					Forest* forest = _model->get_forest_of(stage, landmark_index);
-					num_total_trees += forest->_num_trees;
-					num_total_leaves += forest->_num_total_leaves;
+					num_total_trees += forest->get_num_trees();
+					num_total_leaves += forest->get_num_total_leaves();
 				}
 				cout << "num_total_trees = " << num_total_trees << endl;
 				cout << "num_total_leaves = " << num_total_leaves << endl;
@@ -117,15 +117,16 @@ namespace lbf {
 						Forest* forest = _model->get_forest_of(stage, landmark_index);
 						std::vector<randomforest::Node*> leaves;
 						forest->predict(shape, image, leaves);
-						assert(leaves.size() == forest->_num_trees);
+						assert(leaves.size() == forest->get_num_trees());
 						// delta_shape
-						for(int tree_index = 0;tree_index < forest->_num_trees;tree_index){
+						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
 							Tree* tree = forest->get_tree_at(tree_index);
 							randomforest::Node* leaf = leaves[tree_index];
+							assert(feature_pointer < num_total_trees + 1);
 							liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
 							feature.index = feature_offset + leaf->_identifier;
 							feature.value = 1.0;	// binary feature
-							cout << "(" << feature_offset + leaf->_identifier << ", 1)" << endl;
+							// cout << "(" << feature_offset + leaf->_identifier << ", 1)" << endl;
 							feature_pointer++;
 							feature_offset += tree->get_num_leaves();
 						}

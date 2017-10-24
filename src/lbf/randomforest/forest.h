@@ -21,6 +21,8 @@ namespace lbf {
 					   std::vector<cv::Mat_<double>> &target_shapes);
 			void predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves);
 			Tree* get_tree_at(int tree_index);
+			int get_num_trees();
+			int get_num_total_leaves();
 		};
 	}
 }
