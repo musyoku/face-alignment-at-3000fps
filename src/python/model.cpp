@@ -47,6 +47,7 @@ namespace lbf {
 			assert(stage < _num_stages);
 			assert(landmark_index < _num_landmarks);
 			std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];
+			assert(forest_of_landmark.size() == _num_landmarks);
 			return forest_of_landmark[landmark_index];
 		}
 	}

@@ -25,6 +25,7 @@ namespace lbf {
 		{
 			assert(data_indices.size() > 0);
 			if(node->_depth > _max_depth){
+				node->_is_leaf = true;
 				return;
 			}
 			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, target_shapes);
@@ -50,6 +51,7 @@ namespace lbf {
 		Node* Tree::predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, int landmark_index){
 			int image_width = image.rows;
 			int image_height = image.cols;
+			assert(landmark_index < shape.rows);
 			double landmark_x = shape(landmark_index, 0);	// [-1, 1] : origin is the center of the image
 			double landmark_y = shape(landmark_index, 1);	// [-1, 1] : origin is the center of the image
 
@@ -85,9 +87,11 @@ namespace lbf {
 
 				// select child
 				if(diff < node->_pixel_difference_threshold){
+					assert(node->_left != NULL);
 					node = node->_left;
 					continue;
 				}
+				assert(node->_right != NULL);
 				node = node->_right;
 			}
 			return node;

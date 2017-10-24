@@ -8,6 +8,7 @@ using boost::python::arg;
 namespace np = boost::python::numpy;
 
 BOOST_PYTHON_MODULE(lbf){
+	Py_Initialize();
 	np::initialize();
 
 	boost::python::class_<Corpus>("corpus")

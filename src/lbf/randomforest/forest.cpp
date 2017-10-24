@@ -43,7 +43,7 @@ namespace lbf {
 		void Forest::predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves){
 			leaves.clear();
 			leaves.reserve(_num_trees);
-			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
+			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
 				Tree* tree = _trees[tree_index];
 				Node* leaf = tree->predict(shape, image, _landmark_index);
 				assert(leaf->_is_leaf == true);

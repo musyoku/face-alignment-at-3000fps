@@ -77,14 +77,14 @@ namespace lbf {
 		}
 		void Trainer::train(){
 			for(int stage = 0;stage < _model->_num_stages;stage++){
-				if (PyErr_CheckSignals() != 0) {	// ctrl+cが押されたかチェック
+				if (PyErr_CheckSignals() != 0) {
 					return;		
 				}
 				cout << "training stage: " << stage << " of " << _model->_num_stages << endl;
 				cout << "training local binary features ..." << endl;
 				// train local binary feature
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-					if (PyErr_CheckSignals() != 0) {	// ctrl+cが押されたかチェック
+					if (PyErr_CheckSignals() != 0) {
 						return;		
 					}
 					_train_forest(stage, landmark_index);
@@ -103,7 +103,7 @@ namespace lbf {
 				cout << "num_total_leaves = " << num_total_leaves << endl;
 				struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-					binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1]; // with bias
+					binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees];
 				}
 				//// compute binary features
 				cv::Mat_<int> pixel_differences(_num_features_to_sample, _num_augmented_data);
@@ -113,26 +113,33 @@ namespace lbf {
 					int feature_offset = 1;		// start with 1
 					int feature_pointer = 0;
 					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-						// collect leaves
+						if (PyErr_CheckSignals() != 0) {
+							return;		
+						}
+						// find leaves
 						Forest* forest = _model->get_forest_of(stage, landmark_index);
 						std::vector<randomforest::Node*> leaves;
 						forest->predict(shape, image, leaves);
 						assert(leaves.size() == forest->get_num_trees());
 						// delta_shape
 						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
+							cout << "tree_index = " << tree_index << endl;
 							Tree* tree = forest->get_tree_at(tree_index);
 							randomforest::Node* leaf = leaves[tree_index];
 							assert(feature_pointer < num_total_trees + 1);
 							liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
 							feature.index = feature_offset + leaf->_identifier;
 							feature.value = 1.0;	// binary feature
-							// cout << "(" << feature_offset + leaf->_identifier << ", 1)" << endl;
+							cout << "(" << feature_offset + leaf->_identifier << ", 1)" << "; leaf = " << leaf->_identifier << endl;
 							feature_pointer++;
 							feature_offset += tree->get_num_leaves();
 						}
 					}
 				}
 
+				struct liblinear::problem* problem = new struct liblinear::problem;
+				problem->l = _num_augmented_data;
+				problem->n = num_total_leaves;
 
 				// predict shape
 			}
