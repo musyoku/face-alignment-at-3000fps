@@ -125,12 +125,13 @@ namespace lbf {
 						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
 							cout << "tree_index = " << tree_index << endl;
 							Tree* tree = forest->get_tree_at(tree_index);
+							int num_leaves = tree->get_num_leaves();
 							randomforest::Node* leaf = leaves[tree_index];
 							assert(feature_pointer < num_total_trees + 1);
 							liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
-							feature.index = feature_offset + leaf->_identifier;
+							feature.index = feature_offset + leaf->identifier();
 							feature.value = 1.0;	// binary feature
-							cout << "(" << feature_offset + leaf->_identifier << ", 1)" << "; leaf = " << leaf->_identifier << endl;
+							cout << "(" << feature_offset + leaf->identifier() << ", 1)" << "; leaf = " << leaf->identifier() << endl;
 							feature_pointer++;
 							feature_offset += tree->get_num_leaves();
 						}

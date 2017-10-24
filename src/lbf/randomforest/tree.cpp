@@ -5,8 +5,7 @@ namespace lbf {
 		Tree::Tree(int max_depth){
 			_max_depth = max_depth;
 			_autoincrement_leaf_index = 0;
-			_root = new Node(1, _autoincrement_leaf_index);
-			_autoincrement_leaf_index++;
+			_root = new Node(1);
 			_num_leaves = 0;
 		}
 		void Tree::train(std::set<int> &data_indices,
@@ -26,21 +25,25 @@ namespace lbf {
 			assert(data_indices.size() > 0);
 			if(node->_depth > _max_depth){
 				node->_is_leaf = true;
+				node->_leaf_identifier = _autoincrement_leaf_index;
+				_autoincrement_leaf_index++;
+				_num_leaves++;
 				return;
 			}
 			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, target_shapes);
 			if(need_to_split == false){
+				node->_is_leaf = true;
+				node->_leaf_identifier = _autoincrement_leaf_index;
+				_autoincrement_leaf_index++;
 				_num_leaves++;
 				return;
 			}
+			node->_is_leaf = false;
 			assert(node->_left_indices.size() > 0);
 			assert(node->_right_indices.size() > 0);
 
-			node->_left = new Node(node->_depth + 1, _autoincrement_leaf_index);
-			_autoincrement_leaf_index++;
-			
-			node->_right = new Node(node->_depth + 1, _autoincrement_leaf_index);
-			_autoincrement_leaf_index++;
+			node->_left = new Node(node->_depth + 1);
+			node->_right = new Node(node->_depth + 1);
 
 			split_node(node->_left, node->_left_indices, sampled_feature_locations, pixel_differences, target_shapes);
 			split_node(node->_right, node->_right_indices, sampled_feature_locations, pixel_differences, target_shapes);

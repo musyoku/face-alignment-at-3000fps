@@ -46,7 +46,8 @@ namespace lbf {
 			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
 				Tree* tree = _trees[tree_index];
 				Node* leaf = tree->predict(shape, image, _landmark_index);
-				assert(leaf->_is_leaf == true);
+				assert(leaf->is_leaf() == true);
+				assert(0 <= leaf->identifier() && leaf->identifier() < tree->get_num_leaves());
 				leaves.push_back(leaf);
 			}
 		}

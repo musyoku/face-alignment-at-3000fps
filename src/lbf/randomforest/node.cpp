@@ -96,11 +96,15 @@ namespace lbf {
 			assert(selected_feature_index != -1);
 
 			if(_left_indices.size() == 0 || _right_indices.size() == 0){
-				_is_leaf = true;
 				return false;
 			}
-			_is_leaf = false;
 			return true;
+		}
+		int Node::identifier(){
+			return _leaf_identifier;		
+		}
+		bool Node::is_leaf(){
+			return _is_leaf;
 		}
 	}
 }
