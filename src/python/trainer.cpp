@@ -8,9 +8,10 @@
 
 using std::cout;
 using std::endl;
+using namespace lbf::randomforest;
+namespace liblinear = lbf::liblinear;
 
 namespace lbf {
-	using namespace randomforest;
 	namespace python {
 		Trainer::Trainer(Dataset* dataset, Model* model, int num_features_to_sample){
 			_dataset = dataset;
@@ -99,50 +100,124 @@ namespace lbf {
 					num_total_trees += forest->get_num_trees();
 					num_total_leaves += forest->get_num_total_leaves();
 				}
-				cout << "num_total_trees = " << num_total_trees << endl;
-				cout << "num_total_leaves = " << num_total_leaves << endl;
+				cout << "#trees = " << num_total_trees << endl;
+				cout << "#leaves = " << num_total_leaves << endl;
 				struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-					binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees];
+					binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
 				}
 				//// compute binary features
 				cv::Mat_<int> pixel_differences(_num_features_to_sample, _num_augmented_data);
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+
 					cv::Mat_<double> &shape = _augmented_predicted_shapes[augmented_data_index];
 					cv::Mat_<uint8_t> &image = get_image_by_augmented_index(augmented_data_index);
 					int feature_offset = 1;		// start with 1
 					int feature_pointer = 0;
+
 					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 						if (PyErr_CheckSignals() != 0) {
 							return;		
 						}
 						// find leaves
 						Forest* forest = _model->get_forest_of(stage, landmark_index);
-						std::vector<randomforest::Node*> leaves;
+						std::vector<Node*> leaves;
 						forest->predict(shape, image, leaves);
 						assert(leaves.size() == forest->get_num_trees());
 						// delta_shape
 						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
-							cout << "tree_index = " << tree_index << endl;
+							// cout << "tree_index = " << tree_index << endl;
 							Tree* tree = forest->get_tree_at(tree_index);
 							int num_leaves = tree->get_num_leaves();
-							randomforest::Node* leaf = leaves[tree_index];
+							Node* leaf = leaves[tree_index];
 							assert(feature_pointer < num_total_trees + 1);
 							liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
 							feature.index = feature_offset + leaf->identifier();
 							feature.value = 1.0;	// binary feature
-							cout << "(" << feature_offset + leaf->identifier() << ", 1)" << "; leaf = " << leaf->identifier() << endl;
+							// cout << "(" << feature_offset + leaf->identifier() << ", 1)" << "; leaf = " << leaf->identifier() << endl;
 							feature_pointer++;
 							feature_offset += tree->get_num_leaves();
 						}
 					}
+					liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
+					feature.index = -1;
+					feature.value = -1;
 				}
 
 				struct liblinear::problem* problem = new struct liblinear::problem;
 				problem->l = _num_augmented_data;
 				problem->n = num_total_leaves;
+				problem->x = binary_features;
+				problem->bias = -1;
+
+				struct liblinear::parameter* parameter = new struct liblinear::parameter;
+				parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
+				parameter->C = 1.0 / _num_augmented_data;
+				parameter->p = 0;
+
+			    double** targets = new double*[_model->_num_landmarks];
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					targets[landmark_index] = new double[_num_augmented_data];
+				}
+
+				// train regressor
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+
+					// train x
+					for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+						cv::Mat_<double> &target_shape = _augmented_target_shapes[augmented_data_index];
+						cv::Mat_<double> &predicted_shape = _augmented_predicted_shapes[augmented_data_index];
+
+						double delta_x = target_shape(landmark_index, 0) - predicted_shape(landmark_index, 0);
+
+						targets[landmark_index][augmented_data_index] = delta_x;
+					}
+					problem->y = targets[landmark_index];
+					liblinear::check_parameter(problem, parameter);
+			        struct liblinear::model* model_x = liblinear::train(problem, parameter);
+
+					// train y
+					for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+						cv::Mat_<double> &target_shape = _augmented_target_shapes[augmented_data_index];
+						cv::Mat_<double> &predicted_shape = _augmented_predicted_shapes[augmented_data_index];
+
+						double delta_y = target_shape(landmark_index, 1) - predicted_shape(landmark_index, 1);
+
+						targets[landmark_index][augmented_data_index] = delta_y;
+					}
+					problem->y = targets[landmark_index];
+					liblinear::check_parameter(problem, parameter);
+			        struct liblinear::model* model_y = liblinear::train(problem, parameter);
+
+			        _model->set_linear_models(model_x, model_y, stage, landmark_index);
+				}
 
 				// predict shape
+				double average_error = 0;
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+
+					struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
+					struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
+
+					for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+						cv::Mat_<double> &target_shape = _augmented_target_shapes[augmented_data_index];
+						cv::Mat_<double> &prev_shape = _augmented_predicted_shapes[augmented_data_index];
+						double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
+						double delta_y = liblinear::predict(model_y, binary_features[augmented_data_index]);
+
+						// update shape
+						prev_shape(landmark_index, 0) += delta_x;
+						prev_shape(landmark_index, 1) += delta_y;
+
+						// compute error
+						double error_x = target_shape(landmark_index, 0) - prev_shape(landmark_index, 0);
+						double error_y = target_shape(landmark_index, 1) - prev_shape(landmark_index, 1);
+						double error = std::sqrt(error_x * error_x + error_y * error_y);
+						average_error += error;
+					}
+				}
+				average_error /= _model->_num_landmarks * _num_augmented_data;
+				cout << "Error: " << average_error << endl;
 			}
 		}
 		cv::Mat_<uint8_t> & Trainer::get_image_by_augmented_index(int augmented_data_index){
