@@ -9,6 +9,8 @@ namespace lbf {
 		class Tree {
 		private:
 			Node* _root;
+			int _autoincrement_leaf_index;
+			int _num_leafs;
 		public:
 			int _max_depth;
 			Tree(){};
@@ -22,6 +24,7 @@ namespace lbf {
 							std::vector<FeatureLocation> &sampled_feature_locations, 
 							cv::Mat_<int> &pixel_differences, 
 							std::vector<cv::Mat_<double>> &target_shapes);
+			int get_num_leafs();
 		};
 	}
 }

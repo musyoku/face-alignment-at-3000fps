@@ -1,5 +1,7 @@
+#include <boost/python.hpp>
 #include <cmath>
 #include <iostream>
+#include "../lbf/liblinear/linear.h"
 #include "../lbf/sampler.h"
 #include "../lbf/randomforest/forest.h"
 #include "trainer.h"
@@ -73,11 +75,32 @@ namespace lbf {
 			}
 
 		}
-		void Trainer::train_local_binary_features(){
+		void Trainer::train(){
 			for(int stage = 0;stage < _model->_num_stages;stage++){
-				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-					_train_forest_of(stage, landmark_index);
+				if (PyErr_CheckSignals() != 0) {	// ctrl+cが押されたかチェック
+					return;		
 				}
+				cout << "training stage: " << stage << " of " << _model->_num_stages << endl;
+				// train local binary feature
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					if (PyErr_CheckSignals() != 0) {	// ctrl+cが押されたかチェック
+						return;		
+					}
+					_train_forest(stage, landmark_index);
+				}
+				// train global linear regression
+				int num_trees_in_forest = 0;
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					Forest* forest = _model->get_forest_of(stage, landmark_index);
+					num_trees_in_forest += forest->_num_trees;
+				}
+				cout << "num_trees_in_forest = " << num_trees_in_forest << endl;
+				struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
+				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+					binary_features[augmented_data_index] = new liblinear::feature_node[num_trees_in_forest + 1]; // with bias
+				}
+
+				// predict shape
 			}
 		}
 		cv::Mat_<uint8_t> & Trainer::get_image_by_augmented_index(int augmented_data_index){
@@ -85,7 +108,7 @@ namespace lbf {
 			int data_index = _augmented_indices_to_data_index[augmented_data_index];
 			return _dataset->_corpus->_images_train[data_index];
 		}
-		void Trainer::_train_forest_of(int stage, int landmark_index){
+		void Trainer::_train_forest(int stage, int landmark_index){
 			Corpus* corpus = _dataset->_corpus;
 			Forest* forest = _model->get_forest_of(stage, landmark_index);
 

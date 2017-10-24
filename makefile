@@ -19,8 +19,8 @@ check_ldflags:	## libpython3の場所を確認
 	python3-config --ldflags
 
 module_tests: ## 各モジュールのテスト.
-	$(CC) test/module_tests/randomforest/node.cpp src/randomforest/*.cpp -o test/module_tests/randomforest/node $(INCLUDE) $(LDFLAGS) -O0 -g
-	./test/module_tests/randomforest/node
+	$(CC) test/module_tests/randomforest/forest.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c -o test/module_tests/randomforest/forest $(INCLUDE) $(LDFLAGS) -O0 -g
+	./test/module_tests/randomforest/forest
 
 running_tests:	## 学習テスト
 	$(CC) test/running_tests/train.cpp src/lbf/*.cpp src/python/*.cpp -o test/running_tests/train $(INCLUDE) $(LDFLAGS) -O3 -Wall

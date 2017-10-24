@@ -10,17 +10,19 @@ namespace lbf {
 		public:
 			int _depth;
 			int _is_leaf;
+			int _leaf_index;
 			std::set<int> _left_indices;
 			std::set<int> _right_indices;
 			double _pixel_difference_threshold;
 			FeatureLocation _feature_location;
 			Node* _left;
 			Node* _right;
-			Node(int depth){
+			Node(int depth, int leaf_index){
 				_left = NULL;
 				_right = NULL;
 				_depth = depth;
 				_is_leaf = false;
+				_leaf_index = leaf_index;
 			};
 			bool split(std::set<int> &data_indices,
 					   std::vector<FeatureLocation> &sampled_feature_locations, 

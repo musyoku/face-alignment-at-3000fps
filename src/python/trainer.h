@@ -15,7 +15,7 @@ namespace lbf {
 			std::vector<cv::Mat_<double>> _augmented_target_shapes;
 			std::vector<int> _augmented_indices_to_data_index;
 			std::vector<std::vector<FeatureLocation>> _sampled_feature_locations_at_stage;
-			void _train_forest_of(int stage, int landmark_index);
+			void _train_forest(int stage, int landmark_index);
 			void _compute_pixel_differences(cv::Mat_<double> &shape,
 											cv::Mat_<uint8_t> &image,
 											cv::Mat_<int> &pixel_differences,
@@ -25,7 +25,7 @@ namespace lbf {
 			cv::Mat_<uint8_t> & get_image_by_augmented_index(int augmented_data_index);
 		public:
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
-			void train_local_binary_features();
+			void train();
 		};
 	}
 }

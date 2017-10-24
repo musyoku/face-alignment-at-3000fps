@@ -11,6 +11,7 @@ namespace lbf {
 			int _landmark_index;
 			int _num_trees;
 			int _num_features_to_sample;
+			int _num_total_leafs;
 			double _radius;
 			std::vector<Tree*> _trees;
 			Forest(){};

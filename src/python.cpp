@@ -21,5 +21,5 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, boost::python::list>((arg("num_stages"), arg("num_trees_per_forest"), arg("tree_depth"), arg("num_landmarks"), arg("feature_radius"))));
 
 	boost::python::class_<Trainer>("trainer", boost::python::init<Dataset*, Model*, int>((arg("dataset"), arg("model"), arg("num_features_to_sample"))))
-	.def("train_local_binary_features", &Trainer::train_local_binary_features);
+	.def("train", &Trainer::train);
 }

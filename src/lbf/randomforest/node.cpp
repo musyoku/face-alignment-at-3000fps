@@ -11,7 +11,9 @@ namespace lbf {
 			 cv::Mat_<int> &pixel_differences, 
 			 std::vector<cv::Mat_<double>> &target_shapes_of_data)
 		{
+			assert(data_indices.size() > 0);
 			int num_features = pixel_differences.rows;
+			assert(num_features > 0);
 			double minimum_score = 9999999999;
 			double selected_feature_index = -1;
 
@@ -77,8 +79,8 @@ namespace lbf {
 				double sum_squared_error_right = var_right * tmp_right_indices.size();
 				double score = sum_squared_error_left + sum_squared_error_right;
 
-				cout << "var_left = " << var_left << ", " << "var_right = " << var_right << endl;
-				cout << "score = " << score << endl;
+				// cout << "var_left = " << var_left << ", " << "var_right = " << var_right << endl;
+				// cout << "score = " << score << endl;
 				if(score < minimum_score){
 					minimum_score = score;
 					selected_feature_index = feature_index;
@@ -88,15 +90,16 @@ namespace lbf {
 					_feature_location = sampled_feature_locations[selected_feature_index];
 				}
 			}
-			cout << "minimum_score = " << minimum_score << endl;
-			cout << "selected_feature_index = " << selected_feature_index << endl;
-			cout << _left_indices.size() << " : " << _right_indices.size() << endl;
+			// cout << "minimum_score = " << minimum_score << endl;
+			// cout << "selected_feature_index = " << selected_feature_index << endl;
+			// cout << _left_indices.size() << " : " << _right_indices.size() << endl;
 			assert(selected_feature_index != -1);
 
 			if(_left_indices.size() == 0 || _right_indices.size() == 0){
 				_is_leaf = true;
 				return false;
 			}
+			_is_leaf = false;
 			return true;
 		}
 	}
