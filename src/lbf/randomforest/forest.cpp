@@ -10,7 +10,7 @@ namespace lbf {
 			_num_trees = num_trees;
 			_radius = radius;
 			_landmark_index = landmark_index;
-			_num_total_leafs = 0;
+			_num_total_leaves = 0;
 
 			_trees.reserve(num_trees);
 			for(int n = 0;n < num_trees;n++){
@@ -37,8 +37,22 @@ namespace lbf {
 				// build tree
 				Tree* tree = _trees[tree_index];
 				tree->train(sampled_indices, feature_locations, pixel_differences, target_shapes);
-				_num_total_leafs += tree->get_num_leafs();
+				_num_total_leaves += tree->get_num_leaves();
 			}
+		}
+		void Forest::predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves){
+			leaves.clear();
+			leaves.reserve(_num_trees);
+			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
+				Tree* tree = _trees[tree_index];
+				Node* leaf = tree->predict(shape, image, _landmark_index);
+				assert(leaf->_is_leaf == true);
+				leaves.push_back(leaf);
+			}
+		}
+		Tree* Forest::get_tree_at(int tree_index){
+			assert(tree_index < _num_trees);
+			return _trees[tree_index];	
 		}
 	}
 }

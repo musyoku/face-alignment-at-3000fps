@@ -10,7 +10,7 @@ namespace lbf {
 		private:
 			Node* _root;
 			int _autoincrement_leaf_index;
-			int _num_leafs;
+			int _num_leaves;
 		public:
 			int _max_depth;
 			Tree(){};
@@ -24,7 +24,8 @@ namespace lbf {
 							std::vector<FeatureLocation> &sampled_feature_locations, 
 							cv::Mat_<int> &pixel_differences, 
 							std::vector<cv::Mat_<double>> &target_shapes);
-			int get_num_leafs();
+			int get_num_leaves();
+			Node* predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, int landmark_index);
 		};
 	}
 }

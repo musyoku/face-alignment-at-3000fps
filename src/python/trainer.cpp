@@ -81,6 +81,7 @@ namespace lbf {
 					return;		
 				}
 				cout << "training stage: " << stage << " of " << _model->_num_stages << endl;
+				cout << "training local binary features ..." << endl;
 				// train local binary feature
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					if (PyErr_CheckSignals() != 0) {	// ctrl+cが押されたかチェック
@@ -89,16 +90,48 @@ namespace lbf {
 					_train_forest(stage, landmark_index);
 				}
 				// train global linear regression
-				int num_trees_in_forest = 0;
+				cout << "training global linear regression ..." << endl;
+				//// setup liblinear
+				int num_total_trees = 0;
+				int num_total_leaves = 0;
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					Forest* forest = _model->get_forest_of(stage, landmark_index);
-					num_trees_in_forest += forest->_num_trees;
+					num_total_trees += forest->_num_trees;
+					num_total_leaves += forest->_num_total_leaves;
 				}
-				cout << "num_trees_in_forest = " << num_trees_in_forest << endl;
+				cout << "num_total_trees = " << num_total_trees << endl;
+				cout << "num_total_leaves = " << num_total_leaves << endl;
 				struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-					binary_features[augmented_data_index] = new liblinear::feature_node[num_trees_in_forest + 1]; // with bias
+					binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1]; // with bias
 				}
+				//// compute binary features
+				cv::Mat_<int> pixel_differences(_num_features_to_sample, _num_augmented_data);
+				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+					cv::Mat_<double> &shape = _augmented_predicted_shapes[augmented_data_index];
+					cv::Mat_<uint8_t> &image = get_image_by_augmented_index(augmented_data_index);
+					int feature_offset = 1;		// start with 1
+					int feature_pointer = 0;
+					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+						// collect leaves
+						Forest* forest = _model->get_forest_of(stage, landmark_index);
+						std::vector<randomforest::Node*> leaves;
+						forest->predict(shape, image, leaves);
+						assert(leaves.size() == forest->_num_trees);
+						// delta_shape
+						for(int tree_index = 0;tree_index < forest->_num_trees;tree_index){
+							Tree* tree = forest->get_tree_at(tree_index);
+							randomforest::Node* leaf = leaves[tree_index];
+							liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
+							feature.index = feature_offset + leaf->_identifier;
+							feature.value = 1.0;	// binary feature
+							cout << "(" << feature_offset + leaf->_identifier << ", 1)" << endl;
+							feature_pointer++;
+							feature_offset += tree->get_num_leaves();
+						}
+					}
+				}
+
 
 				// predict shape
 			}
