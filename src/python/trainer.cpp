@@ -1,4 +1,5 @@
 #include <boost/python.hpp>
+#include <omp.h>
 #include <cmath>
 #include <iostream>
 #include "../lbf/liblinear/linear.h"
@@ -8,6 +9,7 @@
 
 using std::cout;
 using std::endl;
+using std::flush;
 using namespace lbf::randomforest;
 namespace liblinear = lbf::liblinear;
 
@@ -81,15 +83,18 @@ namespace lbf {
 				if (PyErr_CheckSignals() != 0) {
 					return;		
 				}
-				cout << "training stage: " << stage << " of " << _model->_num_stages << endl;
+				cout << "training stage: " << (stage + 1) << " of " << _model->_num_stages << endl;
 				cout << "training local binary features ..." << endl;
 				// train local binary feature
+				#pragma omp parallel for
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					if (PyErr_CheckSignals() != 0) {
-						return;		
+						continue;		
 					}
+					cout << "\rforest " << (landmark_index + 1) << " of " << _model->_num_landmarks << flush;
 					_train_forest(stage, landmark_index);
 				}
+				cout << "\r" << flush;
 				// train global linear regression
 				cout << "training global linear regression ..." << endl;
 				//// setup liblinear
