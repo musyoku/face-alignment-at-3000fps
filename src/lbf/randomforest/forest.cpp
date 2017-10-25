@@ -40,7 +40,7 @@ namespace lbf {
 				_num_total_leaves += tree->get_num_leaves();
 			}
 		}
-		void Forest::predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves){
+		void Forest::predict(cv::Mat1d &shape, cv::Mat1b &image, std::vector<Node*> &leaves){
 			leaves.clear();
 			leaves.reserve(_num_trees);
 			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){

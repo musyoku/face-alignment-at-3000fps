@@ -19,7 +19,7 @@ namespace lbf {
 			void train(std::vector<FeatureLocation> &sampled_feature_locations, 
 					   cv::Mat_<int> &pixel_differences, 
 					   std::vector<cv::Mat1d> &target_shapes);
-			void predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves);
+			void predict(cv::Mat1d &shape, cv::Mat1b &image, std::vector<Node*> &leaves);
 			Tree* get_tree_at(int tree_index);
 			int get_num_trees();
 			int get_num_total_leaves();

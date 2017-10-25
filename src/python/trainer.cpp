@@ -117,7 +117,7 @@ namespace lbf {
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 
 				cv::Mat1d &shape = _augmented_predicted_shapes[augmented_data_index];
-				cv::Mat_<uint8_t> &image = get_image_by_augmented_index(augmented_data_index);
+				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
 				int feature_offset = 1;		// start with 1
 				int feature_pointer = 0;
 
@@ -225,7 +225,7 @@ namespace lbf {
 			average_error /= _model->_num_landmarks * _num_augmented_data;
 			cout << "Error: " << average_error << endl;
 		}
-		cv::Mat_<uint8_t> & Trainer::get_image_by_augmented_index(int augmented_data_index){
+		cv::Mat1b & Trainer::get_image_by_augmented_index(int augmented_data_index){
 			assert(augmented_data_index < _augmented_indices_to_data_index.size());
 			int data_index = _augmented_indices_to_data_index[augmented_data_index];
 			return _dataset->_training_corpus->_images[data_index];
@@ -248,15 +248,15 @@ namespace lbf {
 				cv::Mat1d &prev_normalized_shape = _augmented_predicted_shapes[augmented_data_index];
 
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
-				cv::Mat_<uint8_t> &image = corpus->get_image(data_index);
+				cv::Mat1b &image = corpus->get_image(data_index);
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &shift = corpus->get_shift(data_index);
+				cv::Point2d &shift_inv = corpus->get_shift_inv(data_index);
 
 				// inverse
 				cv::Mat1d prev_normalized_shape_T;
 				cv::transpose(prev_normalized_shape, prev_normalized_shape_T);
 
-				cv::Mat1d prev_shape = rotation_inv * prev_normalized_shape_T;
+				cv::Mat1d projected_shape = rotation_inv * prev_normalized_shape_T;
 
 
 				_compute_pixel_differences(prev_normalized_shape, image, pixel_differences, sampled_feature_locations, augmented_data_index, landmark_index);
@@ -265,7 +265,7 @@ namespace lbf {
 			forest->train(sampled_feature_locations, pixel_differences, _augmented_target_shapes);
 		}
 		void Trainer::_compute_pixel_differences(cv::Mat1d &shape, 
-												 cv::Mat_<uint8_t> &image, 
+												 cv::Mat1b &image, 
 												 cv::Mat_<int> &pixel_differences, 
 												 std::vector<FeatureLocation> &sampled_feature_locations,
 												 int data_index, 
@@ -306,28 +306,36 @@ namespace lbf {
 				pixel_differences(feature_index, data_index) = diff;
 			}
 		}
-		np::ndarray Trainer::get_predicted_shape(int augmented_data_index, bool transform){
+		cv::Mat1d Trainer::get_projected_shape(int augmented_data_index){
 			assert(augmented_data_index < _augmented_predicted_shapes.size());
 			cv::Mat1d &shape = _augmented_predicted_shapes[augmented_data_index];
+			Corpus* corpus = _dataset->_training_corpus;
+			int data_index = _augmented_indices_to_data_index[augmented_data_index];
+
+			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
+			cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+			cv::Mat1d shift_inv(2, 1);
+			shift_inv(0, 0) = _shift_inv.x;
+			shift_inv(1, 0) = _shift_inv.y;
+
+			// inverse
+			cv::Mat1d shape_T(shape.cols, shape.rows);
+			cv::transpose(shape, shape_T);
+			shape = rotation_inv * shape_T;
+			for (int w = 0; w < shape.cols; ++w) {
+				shape.col(w) += shift_inv;
+			}
+			cv::transpose(shape, shape_T);
+			shape = shape_T;
+
+			return shape;
+		}
+		np::ndarray Trainer::python_get_current_estimated_shape(int augmented_data_index, bool transform){
+			assert(augmented_data_index < _augmented_predicted_shapes.size());
+			cv::Mat1d shape = _augmented_predicted_shapes[augmented_data_index];
 
 			if(transform){
-				Corpus* corpus = _dataset->_training_corpus;
-				int data_index = _augmented_indices_to_data_index[augmented_data_index];
-				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
-				cv::Mat1d shift_inv(2, 1);
-				shift_inv(0, 0) = _shift_inv.x;
-				shift_inv(1, 0) = _shift_inv.y;
-
-				// inverse
-				cv::Mat1d shape_T(shape.cols, shape.rows);
-				cv::transpose(shape, shape_T);
-				shape = rotation_inv * shape_T;
-				for (int w = 0; w < shape.cols; ++w) {
-					shape.col(w) += shift_inv;
-				}
-				cv::transpose(shape, shape_T);
-				shape = shape_T;
+				shape = get_projected_shape(augmented_data_index);
 			}
 
 			boost::python::tuple size = boost::python::make_tuple(shape.rows, shape.cols);

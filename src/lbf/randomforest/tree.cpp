@@ -51,7 +51,7 @@ namespace lbf {
 		int Tree::get_num_leaves(){
 			return _num_leaves;
 		}
-		Node* Tree::predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, int landmark_index){
+		Node* Tree::predict(cv::Mat1d &shape, cv::Mat1b &image, int landmark_index){
 			int image_width = image.rows;
 			int image_height = image.cols;
 			assert(landmark_index < shape.rows);

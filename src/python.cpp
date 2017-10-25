@@ -23,7 +23,7 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "feature_radius"))));
 
 	boost::python::class_<Trainer>("trainer", boost::python::init<Dataset*, Model*, int>((args("dataset", "model", "num_features_to_sample"))))
-	.def("get_predicted_shape", &Trainer::get_predicted_shape, ((args("data_index"), arg("transform")=false)))
+	.def("get_current_estimated_shape", &Trainer::python_get_current_estimated_shape, ((args("data_index"), arg("transform")=false)))
 	.def("train", &Trainer::train)
 	.def("train_stage", &Trainer::train_stage);
 }

@@ -260,10 +260,10 @@ def main():
 		if args.debug_directory is not None:
 			for data_index in range(training_corpus.get_num_images()):
 				image = training_corpus.get_image(data_index)
-				predicted_shape = trainer.get_predicted_shape(data_index, transform=True)
+				estimated_shape = trainer.get_current_estimated_shape(data_index, transform=True)
 				image_height = image.shape[0]
 				image_width = image.shape[1]
-				for (x, y) in predicted_shape:
+				for (x, y) in estimated_shape:
 					x = int(image_width / 2 + x * image_width / 2)
 					y = int(image_height / 2 + y * image_height / 2)
 					
@@ -271,6 +271,20 @@ def main():
 					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
 
 				cv2.imwrite(os.path.join(args.debug_directory, "%d.jpg" % data_index), image)
+
+			for data_index in range(training_corpus.get_num_images()):
+				image = training_corpus.get_image(data_index)
+				estimated_shape = trainer.get_current_estimated_shape(data_index, transform=False)
+				image_height = image.shape[0]
+				image_width = image.shape[1]
+				for (x, y) in estimated_shape:
+					x = int(image_width / 2 + x * image_width / 2)
+					y = int(image_height / 2 + y * image_height / 2)
+					
+					cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
+					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+
+				cv2.imwrite(os.path.join(args.debug_directory, "%d.2.jpg" % data_index), image)
 				
 		trainer.train_stage(stage)
 
@@ -278,10 +292,10 @@ def main():
 		if args.debug_directory is not None:
 			for data_index in range(training_corpus.get_num_images()):
 				image = training_corpus.get_image(data_index)
-				predicted_shape = trainer.get_predicted_shape(data_index, transform=False)
+				estimated_shape = trainer.get_current_estimated_shape(data_index, transform=False)
 				image_height = image.shape[0]
 				image_width = image.shape[1]
-				for (x, y) in predicted_shape:
+				for (x, y) in estimated_shape:
 					x = int(image_width / 2 + x * image_width / 2)
 					y = int(image_height / 2 + y * image_height / 2)
 					

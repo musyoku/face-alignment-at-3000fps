@@ -11,7 +11,7 @@ namespace lbf {
 			void _add_ndarray_matrix_to(boost::python::numpy::ndarray &array, std::vector<cv::Mat_<T>> &corpus);
 			void _add_ndarray_point_to(boost::python::numpy::ndarray &array, std::vector<cv::Point2d> &corpus);
 		public:
-			std::vector<cv::Mat_<uint8_t>> _images;
+			std::vector<cv::Mat1b> _images;
 			std::vector<cv::Mat1d> _shapes;
 			std::vector<cv::Mat1d> _normalized_shapes;
 			std::vector<cv::Mat1d> _rotation;
@@ -28,7 +28,7 @@ namespace lbf {
 			int get_num_images();
 			cv::Mat1d & get_shape(int data_index);
 			cv::Mat1d & get_normalized_shape(int data_index);
-			cv::Mat_<uint8_t> & get_image(int data_index);
+			cv::Mat1b & get_image(int data_index);
 			cv::Mat1d & get_rotation(int data_index);
 			cv::Mat1d & get_rotation_inv(int data_index);
 			cv::Point2d & get_shift(int data_index);

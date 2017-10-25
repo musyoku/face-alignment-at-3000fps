@@ -25,7 +25,7 @@ namespace lbf {
 							cv::Mat_<int> &pixel_differences, 
 							std::vector<cv::Mat1d> &target_shapes);
 			int get_num_leaves();
-			Node* predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, int landmark_index);
+			Node* predict(cv::Mat1d &shape, cv::Mat1b &image, int landmark_index);
 		};
 	}
 }

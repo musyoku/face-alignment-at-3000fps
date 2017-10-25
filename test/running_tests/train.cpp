@@ -21,7 +21,7 @@ int main(){
 	np::initialize();
 	Corpus* training_corpus = new Corpus();
 	Corpus* validation_corpus = new Corpus();
-	cv::Mat_<uint8_t> image(100, 100);
+	cv::Mat1b image(100, 100);
 	cv::Mat1d shape(68, 2);
 	int num_data = 10;
 	for(int data_index = 0;data_index < num_data;data_index++){

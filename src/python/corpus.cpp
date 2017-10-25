@@ -59,16 +59,16 @@ namespace lbf {
 			assert(data_index < _normalized_shapes.size());
 			return _normalized_shapes[data_index];
 		}
-		cv::Mat_<uint8_t> & Corpus::get_image(int data_index){
+		cv::Mat1b & Corpus::get_image(int data_index){
 			assert(data_index < _images.size());
 			return _images[data_index];
 		}
 		boost::python::numpy::ndarray Corpus::python_get_image(int data_index){
 			assert(data_index < _images.size());
-			cv::Mat_<uint8_t> &image = _images[data_index];
+			cv::Mat1b &image = _images[data_index];
 
 			boost::python::tuple size = boost::python::make_tuple(image.rows, image.cols);
-			np::ndarray image_ndarray = np::zeros(size, np::dtype::get_builtin<uint8_t>());
+			np::ndarray image_ndarray = np::zeros(size, np::dtype::get_builtin<uchar>());
 			for(int h = 0;h < image.rows;h++) {
 				for(int w = 0;w < image.cols;w++) {
 					image_ndarray[h][w] = image(h, w);
