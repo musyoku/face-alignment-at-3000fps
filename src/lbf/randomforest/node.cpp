@@ -10,7 +10,7 @@ namespace lbf {
 		bool Node::split(std::set<int> &data_indices,
 			 std::vector<FeatureLocation> &sampled_feature_locations, 
 			 cv::Mat_<int> &pixel_differences, 
-			 std::vector<cv::Mat_<double>> &target_shapes_of_data)
+			 std::vector<cv::Mat1d> &target_shapes_of_data)
 		{
 			assert(data_indices.size() > 0);
 			int num_features = pixel_differences.rows;
@@ -40,7 +40,7 @@ namespace lbf {
 
 				for(int data_index: data_indices){
 					int pixel_difference = pixel_differences(feature_index, data_index);
-					cv::Mat_<double> &target_shape = target_shapes_of_data[data_index];
+					cv::Mat1d &target_shape = target_shapes_of_data[data_index];
 					double target_x = target_shape(feature_index, 0);
 					double target_y = target_shape(feature_index, 1);
 

@@ -11,7 +11,7 @@ namespace lbf {
 		void Tree::train(std::set<int> &data_indices,
 			 std::vector<FeatureLocation> &sampled_feature_locations, 
 			 cv::Mat_<int> &pixel_differences, 
-			 std::vector<cv::Mat_<double>> &target_shapes)
+			 std::vector<cv::Mat1d> &target_shapes)
 		{
 			assert(data_indices.size() > 0);
 			split_node(_root, data_indices, sampled_feature_locations, pixel_differences, target_shapes);
@@ -20,7 +20,7 @@ namespace lbf {
 							  std::set<int> &data_indices,
 							  std::vector<FeatureLocation> &sampled_feature_locations, 
 							  cv::Mat_<int> &pixel_differences, 
-							  std::vector<cv::Mat_<double>> &target_shapes)
+							  std::vector<cv::Mat1d> &target_shapes)
 		{
 			assert(data_indices.size() > 0);
 			if(node->_depth > _max_depth){
@@ -51,7 +51,7 @@ namespace lbf {
 		int Tree::get_num_leaves(){
 			return _num_leaves;
 		}
-		Node* Tree::predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, int landmark_index){
+		Node* Tree::predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, int landmark_index){
 			int image_width = image.rows;
 			int image_height = image.cols;
 			assert(landmark_index < shape.rows);

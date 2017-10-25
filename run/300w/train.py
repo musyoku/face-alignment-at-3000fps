@@ -187,7 +187,8 @@ def build_corpus():
 		mean_shape[feature_index][1] /= len(shape_list_train)
 
 	mean_shape = np.asarray(mean_shape, dtype=np.float64)
-	corpus = lbf.corpus()
+	training_corpus = lbf.corpus()
+	test_corpus = lbf.corpus()
 
 	for image, shape in zip(image_list_train, shape_list_train):
 		shape = np.asarray(shape, dtype=np.float64)
@@ -206,13 +207,9 @@ def build_corpus():
 		except Exception as e:
 			continue
 
-		shape_inv = np.transpose(np.dot(rotation_inv, normalized_shape.T) - shift[:, None], (1, 0))
+		training_corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift)
 
-		print(shape - shape_inv)
-
-		corpus.add_training_data(image, shape, normalized_shape, rotation, shift)
-
-	return corpus, mean_shape
+	return training_corpus, test_corpus, mean_shape
 
 def main():
 	assert args.dataset_directory is not None
@@ -223,8 +220,9 @@ def main():
 		pass
 
 	# build corpus
-	corpus, mean_shape = build_corpus()
-	print("#images:", corpus.get_num_training_images())
+	training_corpus, test_corpus, mean_shape = build_corpus()
+	print("#images (train):", training_corpus.get_num_images())
+	print("#images (test):", test_corpus.get_num_images())
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -237,7 +235,8 @@ def main():
 	cv2.imwrite("mean.jpg", mean_shape_image)
 
 	# initialize dataset
-	dataset = lbf.dataset(corpus=corpus, 
+	dataset = lbf.dataset(training_corpus=training_corpus, 
+						  test_corpus=test_corpus,
 						  mean_shape_ndarray=mean_shape, 
 						  augmentation_size=args.augmentation_size)
 
@@ -256,13 +255,30 @@ def main():
 						  num_features_to_sample=args.num_training_features)
 
 	for stage in range(args.num_stages):
+
+		# debug
+		if args.debug_directory is not None:
+			for data_index in range(training_corpus.get_num_images()):
+				image = training_corpus.get_image(data_index)
+				predicted_shape = trainer.get_predicted_shape(data_index, transform=True)
+				image_height = image.shape[0]
+				image_width = image.shape[1]
+				for (x, y) in predicted_shape:
+					x = int(image_width / 2 + x * image_width / 2)
+					y = int(image_height / 2 + y * image_height / 2)
+					
+					cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
+					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+
+				cv2.imwrite(os.path.join(args.debug_directory, "%d.jpg" % data_index), image)
+				
 		trainer.train_stage(stage)
 
 		# debug
 		if args.debug_directory is not None:
-			for data_index in range(corpus.get_num_training_images()):
-				image = corpus.get_training_image(data_index)
-				predicted_shape = trainer.get_predicted_shape(data_index)
+			for data_index in range(training_corpus.get_num_images()):
+				image = training_corpus.get_image(data_index)
+				predicted_shape = trainer.get_predicted_shape(data_index, transform=False)
 				image_height = image.shape[0]
 				image_width = image.shape[1]
 				for (x, y) in predicted_shape:

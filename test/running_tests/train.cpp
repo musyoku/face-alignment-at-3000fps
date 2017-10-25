@@ -19,7 +19,8 @@ namespace np = boost::python::numpy;
 int main(){
 	Py_Initialize();
 	np::initialize();
-	Corpus* corpus = new Corpus();
+	Corpus* training_corpus = new Corpus();
+	Corpus* validation_corpus = new Corpus();
 	cv::Mat_<uint8_t> image(100, 100);
 	cv::Mat_<uint8_t> shape(68, 2);
 	int num_data = 10;
@@ -33,9 +34,14 @@ int main(){
 			shape(landmark_index, 0) = sampler::uniform(-1, 1);
 			shape(landmark_index, 1) = sampler::uniform(-1, 1);
 		}
-		corpus->_images_train.push_back(image);
-		corpus->_shapes_train.push_back(shape);
-		corpus->_normalized_shapes_train.push_back(shape);
+		training_corpus->_images.push_back(image);
+		training_corpus->_shapes.push_back(shape);
+		training_corpus->_normalized_shapes.push_back(shape);
+		cv::Mat1d rotation(2, 2);
+		training_corpus->_rotation.push_back(rotation);
+		training_corpus->_rotation_inv.push_back(rotation);
+		cv::Point2d shift;
+		training_corpus->_shift.push_back(shift);
 	}
 	double* mean_shape = new double[68 * 2];
 	for(int landmark_index = 0;landmark_index < 68;landmark_index++){
@@ -53,13 +59,16 @@ int main(){
 	int num_features_to_sample = 500;
 	std::vector<double> feature_radius{0.29, 0.21, 0.16, 0.12, 0.08, 0.04};
 
-	Dataset* dataset = new Dataset(corpus, mean_shape_ndarray, augmentation_size);
+	Dataset* dataset = new Dataset(training_corpus, validation_corpus, mean_shape_ndarray, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, feature_radius);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
+	for(int data_index = 0;data_index < training_corpus->get_num_images();data_index++){
+		trainer->get_predicted_shape(data_index, true);
+	}
 	trainer->train();
 
 	delete[] mean_shape;
-	delete corpus;
+	delete training_corpus;
 	delete dataset;
 	delete model;
 	delete trainer;

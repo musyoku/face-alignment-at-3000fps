@@ -27,7 +27,7 @@ namespace lbf {
 			bool split(std::set<int> &data_indices,
 					   std::vector<FeatureLocation> &sampled_feature_locations, 
 					   cv::Mat_<int> &pixel_differences, 
-					   std::vector<cv::Mat_<double>> &target_shapes_of_data);
+					   std::vector<cv::Mat1d> &target_shapes_of_data);
 			int identifier();
 			bool is_leaf();
 		};

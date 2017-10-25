@@ -20,7 +20,7 @@ namespace lbf {
 		}
 		void Forest::train(std::vector<FeatureLocation> &feature_locations, 
 						   cv::Mat_<int> &pixel_differences, 
-						   std::vector<cv::Mat_<double>> &target_shapes)
+						   std::vector<cv::Mat1d> &target_shapes)
 		{
 			assert(feature_locations.size() == pixel_differences.rows);
 			assert(pixel_differences.cols == target_shapes.size());
@@ -40,7 +40,7 @@ namespace lbf {
 				_num_total_leaves += tree->get_num_leaves();
 			}
 		}
-		void Forest::predict(cv::Mat_<double> &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves){
+		void Forest::predict(cv::Mat1d &shape, cv::Mat_<uint8_t> &image, std::vector<Node*> &leaves){
 			leaves.clear();
 			leaves.reserve(_num_trees);
 			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
