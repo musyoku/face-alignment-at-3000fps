@@ -54,13 +54,13 @@ namespace lbf {
 			int num_landmarks = model->_num_landmarks;
 			int augmentation_size = _dataset->_augmentation_size;
 
-			_augmented_predicted_shapes.resize(_num_augmented_data);
+			_augmented_estimated_shapes.resize(_num_augmented_data);
 			_augmented_target_shapes.resize(_num_augmented_data);
 			_augmented_indices_to_data_index.resize(_num_augmented_data);
 
 			// normalized shape
 			for(int data_index = 0;data_index < num_data;data_index++){
-				_augmented_predicted_shapes[data_index] = corpus->get_normalized_shape(data_index);
+				_augmented_estimated_shapes[data_index] = corpus->get_normalized_shape(data_index);
 				_augmented_target_shapes[data_index] = corpus->get_shape(data_index);
 				_augmented_indices_to_data_index[data_index] = data_index;
 			}
@@ -72,7 +72,7 @@ namespace lbf {
 				for(int n = 0;n < augmentation_size;n++){
 					int augmented_data_index = (n + 1) * num_data + data_index;
 					int shape_index = initial_shape_indices[n];
-					_augmented_predicted_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index);
+					_augmented_estimated_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index);
 					_augmented_target_shapes[augmented_data_index] = corpus->get_shape(data_index);
 					_augmented_indices_to_data_index[augmented_data_index] = data_index;
 				}
@@ -116,7 +116,7 @@ namespace lbf {
 			cv::Mat_<int> pixel_differences(_num_features_to_sample, _num_augmented_data);
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 
-				cv::Mat1d &shape = _augmented_predicted_shapes[augmented_data_index];
+				cv::Mat1d estimated_shape = get_projected_shape(augmented_data_index);
 				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
 				int feature_offset = 1;		// start with 1
 				int feature_pointer = 0;
@@ -128,7 +128,7 @@ namespace lbf {
 					// find leaves
 					Forest* forest = _model->get_forest_of(stage, landmark_index);
 					std::vector<Node*> leaves;
-					forest->predict(shape, image, leaves);
+					forest->predict(estimated_shape, image, leaves);
 					assert(leaves.size() == forest->get_num_trees());
 					// delta_shape
 					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
@@ -172,9 +172,9 @@ namespace lbf {
 				// train x
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-					cv::Mat1d &predicted_shape = _augmented_predicted_shapes[augmented_data_index];
+					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
 
-					double delta_x = target_shape(landmark_index, 0) - predicted_shape(landmark_index, 0);
+					double delta_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
 
 					targets[landmark_index][augmented_data_index] = delta_x;
 				}
@@ -185,9 +185,9 @@ namespace lbf {
 				// train y
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-					cv::Mat1d &predicted_shape = _augmented_predicted_shapes[augmented_data_index];
+					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
 
-					double delta_y = target_shape(landmark_index, 1) - predicted_shape(landmark_index, 1);
+					double delta_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
 
 					targets[landmark_index][augmented_data_index] = delta_y;
 				}
@@ -207,17 +207,17 @@ namespace lbf {
 
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-					cv::Mat1d &prev_shape = _augmented_predicted_shapes[augmented_data_index];
+					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
 					double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
 					double delta_y = liblinear::predict(model_y, binary_features[augmented_data_index]);
 
 					// update shape
-					prev_shape(landmark_index, 0) += delta_x;
-					prev_shape(landmark_index, 1) += delta_y;
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
 
 					// compute error
-					double error_x = target_shape(landmark_index, 0) - prev_shape(landmark_index, 0);
-					double error_y = target_shape(landmark_index, 1) - prev_shape(landmark_index, 1);
+					double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
+					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
 					double error = std::sqrt(error_x * error_x + error_y * error_y);
 					average_error += error;
 				}
@@ -245,21 +245,9 @@ namespace lbf {
 
 			// get pixel differences
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				cv::Mat1d &prev_normalized_shape = _augmented_predicted_shapes[augmented_data_index];
-
-				int data_index = _augmented_indices_to_data_index[augmented_data_index];
-				cv::Mat1b &image = corpus->get_image(data_index);
-				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &shift_inv = corpus->get_shift_inv(data_index);
-
-				// inverse
-				cv::Mat1d prev_normalized_shape_T;
-				cv::transpose(prev_normalized_shape, prev_normalized_shape_T);
-
-				cv::Mat1d projected_shape = rotation_inv * prev_normalized_shape_T;
-
-
-				_compute_pixel_differences(prev_normalized_shape, image, pixel_differences, sampled_feature_locations, augmented_data_index, landmark_index);
+				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
+				cv::Mat1d projected_shape = get_projected_shape(augmented_data_index);
+				_compute_pixel_differences(projected_shape, image, pixel_differences, sampled_feature_locations, augmented_data_index, landmark_index);
 			}
 
 			forest->train(sampled_feature_locations, pixel_differences, _augmented_target_shapes);
@@ -307,8 +295,8 @@ namespace lbf {
 			}
 		}
 		cv::Mat1d Trainer::get_projected_shape(int augmented_data_index){
-			assert(augmented_data_index < _augmented_predicted_shapes.size());
-			cv::Mat1d &shape = _augmented_predicted_shapes[augmented_data_index];
+			assert(augmented_data_index < _augmented_estimated_shapes.size());
+			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];	// make a copy
 			Corpus* corpus = _dataset->_training_corpus;
 			int data_index = _augmented_indices_to_data_index[augmented_data_index];
 
@@ -331,8 +319,8 @@ namespace lbf {
 			return shape;
 		}
 		np::ndarray Trainer::python_get_current_estimated_shape(int augmented_data_index, bool transform){
-			assert(augmented_data_index < _augmented_predicted_shapes.size());
-			cv::Mat1d shape = _augmented_predicted_shapes[augmented_data_index];
+			assert(augmented_data_index < _augmented_estimated_shapes.size());
+			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];
 
 			if(transform){
 				shape = get_projected_shape(augmented_data_index);

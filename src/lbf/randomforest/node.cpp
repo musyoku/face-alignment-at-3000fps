@@ -8,9 +8,9 @@ using std::endl;
 namespace lbf {
 	namespace randomforest {
 		bool Node::split(std::set<int> &data_indices,
-			 std::vector<FeatureLocation> &sampled_feature_locations, 
-			 cv::Mat_<int> &pixel_differences, 
-			 std::vector<cv::Mat1d> &target_shapes_of_data)
+						 std::vector<FeatureLocation> &sampled_feature_locations, 
+						 cv::Mat_<int> &pixel_differences, 
+						 std::vector<cv::Mat1d> &target_shapes_of_data)
 		{
 			assert(data_indices.size() > 0);
 			int num_features = pixel_differences.rows;

@@ -9,9 +9,9 @@ namespace lbf {
 			_num_leaves = 0;
 		}
 		void Tree::train(std::set<int> &data_indices,
-			 std::vector<FeatureLocation> &sampled_feature_locations, 
-			 cv::Mat_<int> &pixel_differences, 
-			 std::vector<cv::Mat1d> &target_shapes)
+						 std::vector<FeatureLocation> &sampled_feature_locations, 
+						 cv::Mat_<int> &pixel_differences, 
+						 std::vector<cv::Mat1d> &target_shapes)
 		{
 			assert(data_indices.size() > 0);
 			split_node(_root, data_indices, sampled_feature_locations, pixel_differences, target_shapes);

@@ -12,7 +12,7 @@ namespace lbf {
 			Model* _model;
 			int _num_features_to_sample;
 			int _num_augmented_data;
-			std::vector<cv::Mat1d> _augmented_predicted_shapes;
+			std::vector<cv::Mat1d> _augmented_estimated_shapes;
 			std::vector<cv::Mat1d> _augmented_target_shapes;
 			std::vector<int> _augmented_indices_to_data_index;
 			std::vector<std::vector<FeatureLocation>> _sampled_feature_locations_at_stage;
