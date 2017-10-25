@@ -12,6 +12,8 @@ namespace lbf {
 			int _augmentation_size;
 			std::vector<std::vector<int>> _augmented_initial_shape_indices_of_data;
 			Dataset(Corpus* corpus, boost::python::numpy::ndarray mean_shape_ndarray, int augmentation_size);
+			int get_num_training_images();
+			int get_num_test_images();
 		};
 	}
 }

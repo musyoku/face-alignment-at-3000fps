@@ -164,6 +164,7 @@ def build_corpus():
 	image_list_train = []
 	shape_list_train = []
 	targets = ["01_Indoor", "02_Outdoor"]
+	targets = ["00_Test"]
 
 	mean_shape = []
 	for _ in range(68):
@@ -225,9 +226,16 @@ def main():
 
 		normalized_shape = np.transpose(np.dot(rotation, shape.T) + shift[:, None], (1, 0))
 
+		try:
+			rotation_inv = np.linalg.inv(rotation)
+		except Exception as e:
+			continue
+		shape_inv = np.transpose(np.dot(rotation_inv, normalized_shape.T - shift[:, None]), (1, 0))
+
 		# save normalized shape
 		plot_shape(shape, "{}_original".format(index))
 		plot_shape(normalized_shape, "{}_normalized".format(index))
+		plot_shape(shape_inv, "{}_inverse".format(index))
 
 	print("#images", len(image_list_train))
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/python/numpy.hpp>
 #include "../lbf/common.h"
 #include "dataset.h"
 #include "model.h"
@@ -26,6 +27,8 @@ namespace lbf {
 		public:
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
 			void train();
+			void train_stage(int stage);
+			boost::python::numpy::ndarray get_predicted_shape(int augmented_data_index);
 		};
 	}
 }

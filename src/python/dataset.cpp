@@ -41,5 +41,11 @@ namespace lbf {
 				_augmented_initial_shape_indices_of_data.push_back(initial_shape_indices);
 			}
 		}
+		int Dataset::get_num_training_images(){
+			return _corpus->_images_train.size();
+		}
+		int Dataset::get_num_test_images(){
+			return _corpus->_images_test.size();
+		}
 	}
 }

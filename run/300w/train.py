@@ -165,7 +165,7 @@ def build_corpus():
 	image_list_train = []
 	shape_list_train = []
 	targets = ["01_Indoor", "02_Outdoor"]
-	# targets = ["00_Test"]
+	targets = ["00_Test"]
 
 	mean_shape = []
 	for _ in range(68):
@@ -201,7 +201,16 @@ def build_corpus():
 		shift = mat[:, 2]
 		normalized_shape = np.transpose(np.dot(rotation, shape.T) + shift[:, None], (1, 0))
 
-		corpus.add_training_data(image, shape, normalized_shape)
+		try:
+			rotation_inv = np.linalg.inv(rotation)
+		except Exception as e:
+			continue
+
+		shape_inv = np.transpose(np.dot(rotation_inv, normalized_shape.T) - shift[:, None], (1, 0))
+
+		print(shape - shape_inv)
+
+		corpus.add_training_data(image, shape, normalized_shape, rotation, shift)
 
 	return corpus, mean_shape
 
@@ -245,12 +254,30 @@ def main():
 	trainer = lbf.trainer(dataset=dataset, 
 						  model=model,
 						  num_features_to_sample=args.num_training_features)
-	trainer.train()
 
+	for stage in range(args.num_stages):
+		trainer.train_stage(stage)
+
+		# debug
+		if args.debug_directory is not None:
+			for data_index in range(corpus.get_num_training_images()):
+				image = corpus.get_training_image(data_index)
+				predicted_shape = trainer.get_predicted_shape(data_index)
+				image_height = image.shape[0]
+				image_width = image.shape[1]
+				for (x, y) in predicted_shape:
+					x = int(image_width / 2 + x * image_width / 2)
+					y = int(image_height / 2 + y * image_height / 2)
+					
+					cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
+					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+
+				cv2.imwrite(os.path.join(args.debug_directory, "%d.jpg" % data_index), image)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
+	parser.add_argument("--debug-directory", "-debug", type=str, default=None)
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=6)

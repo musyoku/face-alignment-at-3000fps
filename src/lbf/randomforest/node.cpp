@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../sampler.h"
 #include "node.h"
 
 using std::cout;
@@ -26,7 +27,8 @@ namespace lbf {
 					pixel_differences_of_data.push_back(pixel_differences(feature_index, data_index));
 				}
 				std::sort(pixel_differences_of_data.begin(), pixel_differences_of_data.end());
-				int tmp_threshold = pixel_differences_of_data[pixel_differences_of_data.size() / 2];
+				int random_index = sampler::uniform_int(0, pixel_differences_of_data.size() * 0.9) + pixel_differences_of_data.size() * 0.05;
+				int tmp_threshold = pixel_differences_of_data[random_index];
 
 				// calculate variance of target landmark positons
 				std::set<int> tmp_left_indices;
