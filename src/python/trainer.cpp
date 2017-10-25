@@ -88,13 +88,12 @@ namespace lbf {
 				// train local binary feature
 				#pragma omp parallel for
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-					if (PyErr_CheckSignals() != 0) {
-						continue;		
-					}
-					cout << "\rforest " << (landmark_index + 1) << " of " << _model->_num_landmarks << flush;
 					_train_forest(stage, landmark_index);
 				}
 				cout << "\r" << flush;
+				if (PyErr_CheckSignals() != 0) {
+					return;		
+				}
 				// train global linear regression
 				cout << "training global linear regression ..." << endl;
 				//// setup liblinear

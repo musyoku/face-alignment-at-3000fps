@@ -2,7 +2,7 @@ CC = g++
 BOOST = /home/stark/boost
 INCLUDE = `python3-config --includes` `pkg-config --cflags opencv` -std=c++11 -I$(BOOST)/include
 LDFLAGS = `python3-config --ldflags` `pkg-config --libs opencv` -lboost_serialization -lboost_numpy3 -lboost_python3 -L$(BOOST)/lib
-SOFLAGS = -shared -fPIC -march=native -O0 -g -fopenmp
+SOFLAGS = -shared -fPIC -march=native -O3 -fopenmp
 
 install: ## Python用ライブラリをコンパイル
 	$(CC) $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/python/*.cpp $(LDFLAGS)
