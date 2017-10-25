@@ -140,9 +140,7 @@ def preprocess_images(directory):
 				continue
 
 			image_gray = image_gray[bbox.top:bbox.bottom + 1, bbox.left:bbox.right + 1]
-			scale = 1.0
 			if bbox.width() > args.max_image_size:
-				scale = args.max_image_size / bbox.width()
 				image_gray = cv2.resize(image_gray, (args.max_image_size, args.max_image_size))
 
 			dataset_images.append(image_gray)
@@ -152,8 +150,8 @@ def preprocess_images(directory):
 			# y: [-1, 1]
 			normalized_landmarks = []
 			for feature_index, (x, y) in enumerate(landmarks):
-				x = scale * (x - bbox.left) / bbox.width() * 2 - 1
-				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
+				x = (x - bbox.left) / bbox.width() * 2 - 1
+				y = (y - bbox.top) / bbox.height() * 2 - 1
 				normalized_landmarks.append((x, y))
 
 			dataset_landmarks.append(normalized_landmarks)

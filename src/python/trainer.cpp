@@ -314,13 +314,20 @@ namespace lbf {
 				Corpus* corpus = _dataset->_training_corpus;
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &shift = corpus->get_shift(data_index);
+				cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+				cv::Mat1d shift_inv(2, 1);
+				shift_inv(0, 0) = _shift_inv.x;
+				shift_inv(1, 0) = _shift_inv.y;
 
 				// inverse
-				cv::Mat1d shape_T;
+				cv::Mat1d shape_T(shape.cols, shape.rows);
 				cv::transpose(shape, shape_T);
-
 				shape = rotation_inv * shape_T;
+				for (int w = 0; w < shape.cols; ++w) {
+					shape.col(w) += shift_inv;
+				}
+				cv::transpose(shape, shape_T);
+				shape = shape_T;
 			}
 
 			boost::python::tuple size = boost::python::make_tuple(shape.rows, shape.cols);

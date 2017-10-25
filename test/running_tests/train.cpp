@@ -22,7 +22,7 @@ int main(){
 	Corpus* training_corpus = new Corpus();
 	Corpus* validation_corpus = new Corpus();
 	cv::Mat_<uint8_t> image(100, 100);
-	cv::Mat_<uint8_t> shape(68, 2);
+	cv::Mat1d shape(68, 2);
 	int num_data = 10;
 	for(int data_index = 0;data_index < num_data;data_index++){
 		for(int h = 0;h < 100;h++){
@@ -38,9 +38,15 @@ int main(){
 		training_corpus->_shapes.push_back(shape);
 		training_corpus->_normalized_shapes.push_back(shape);
 		cv::Mat1d rotation(2, 2);
+		rotation(0, 0) = 1;
+		rotation(0, 1) = 0;
+		rotation(1, 0) = 0;
+		rotation(1, 1) = 1;
 		training_corpus->_rotation.push_back(rotation);
 		training_corpus->_rotation_inv.push_back(rotation);
 		cv::Point2d shift;
+		shift.x = 1;
+		shift.y = 1;
 		training_corpus->_shift.push_back(shift);
 	}
 	double* mean_shape = new double[68 * 2];

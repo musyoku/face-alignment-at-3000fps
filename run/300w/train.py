@@ -141,9 +141,7 @@ def preprocess_images(directory):
 				continue
 
 			image_gray = image_gray[bbox.top:bbox.bottom + 1, bbox.left:bbox.right + 1]
-			scale = 1.0
 			if bbox.width() > args.max_image_size:
-				scale = args.max_image_size / bbox.width()
 				image_gray = cv2.resize(image_gray, (args.max_image_size, args.max_image_size))
 
 			dataset_images.append(image_gray)
@@ -153,8 +151,8 @@ def preprocess_images(directory):
 			# y: [-1, 1]
 			localized_landmarks = []
 			for feature_index, (x, y) in enumerate(landmarks):
-				x = scale * (x - bbox.left) / bbox.width() * 2 - 1
-				y = scale * (y - bbox.top) / bbox.height() * 2 - 1
+				x = (x - bbox.left) / bbox.width() * 2 - 1
+				y = (y - bbox.top) / bbox.height() * 2 - 1
 				localized_landmarks.append((x, y))
 
 			dataset_landmarks.append(localized_landmarks)
@@ -188,7 +186,7 @@ def build_corpus():
 
 	mean_shape = np.asarray(mean_shape, dtype=np.float64)
 	training_corpus = lbf.corpus()
-	test_corpus = lbf.corpus()
+	validation_corpus = lbf.corpus()
 
 	for image, shape in zip(image_list_train, shape_list_train):
 		shape = np.asarray(shape, dtype=np.float64)
@@ -202,14 +200,16 @@ def build_corpus():
 		shift = mat[:, 2]
 		normalized_shape = np.transpose(np.dot(rotation, shape.T) + shift[:, None], (1, 0))
 
-		try:
-			rotation_inv = np.linalg.inv(rotation)
-		except Exception as e:
+		mat = cv2.estimateRigidTransform(normalized_shape, shape, False)
+		if mat is None:
 			continue
 
-		training_corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift)
+		rotation_inv = mat[:, :2]
+		shift_inv = mat[:, 2]
 
-	return training_corpus, test_corpus, mean_shape
+		training_corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv)
+
+	return training_corpus, validation_corpus, mean_shape
 
 def main():
 	assert args.dataset_directory is not None
@@ -220,9 +220,9 @@ def main():
 		pass
 
 	# build corpus
-	training_corpus, test_corpus, mean_shape = build_corpus()
+	training_corpus, validation_corpus, mean_shape = build_corpus()
 	print("#images (train):", training_corpus.get_num_images())
-	print("#images (test):", test_corpus.get_num_images())
+	print("#images (valid):", validation_corpus.get_num_images())
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -236,7 +236,7 @@ def main():
 
 	# initialize dataset
 	dataset = lbf.dataset(training_corpus=training_corpus, 
-						  test_corpus=test_corpus,
+						  validation_corpus=validation_corpus,
 						  mean_shape_ndarray=mean_shape, 
 						  augmentation_size=args.augmentation_size)
 

@@ -11,7 +11,8 @@ namespace lbf {
 						 boost::python::numpy::ndarray normalized_shape_ndarray,
 						 boost::python::numpy::ndarray rotation,
 						 boost::python::numpy::ndarray rotation_inv,
-						 boost::python::numpy::ndarray shift)
+						 boost::python::numpy::ndarray shift,
+						 boost::python::numpy::ndarray shift_inv)
 		{
 			_add_ndarray_matrix_to(image_ndarray, _images);
 			_add_ndarray_matrix_to(shape_ndarray, _shapes);
@@ -19,6 +20,7 @@ namespace lbf {
 			_add_ndarray_matrix_to(rotation, _rotation);
 			_add_ndarray_matrix_to(rotation_inv, _rotation_inv);
 			_add_ndarray_point_to(shift, _shift);
+			_add_ndarray_point_to(shift_inv, _shift_inv);
 
 			assert(_images.size() == _shift.size());
 			assert(_images.size() == _normalized_shapes.size());
@@ -46,30 +48,6 @@ namespace lbf {
 			point.y = *reinterpret_cast<double*>(array.get_data() + stride[0]);
 			corpus.push_back(point);
 		}
-		// void Corpus::_add_image_to(boost::python::numpy::ndarray &image_ndarray, std::vector<cv::Mat_<uint8_t>> &corpus){
-		// 	auto size = image_ndarray.get_shape();
-		// 	auto stride = image_ndarray.get_strides();
-		// 	cv::Mat_<uint8_t> image(size[0], size[1]);
-		// 	for (int h = 0; h < size[0]; ++h) {
-		// 		for (int w = 0; w < size[1]; ++w) {
-		// 			uint8_t pixel_value = *reinterpret_cast<uint8_t*>(image_ndarray.get_data() + h * stride[0] + w * stride[1]);
-		// 			image(h, w) = pixel_value;
-		// 		}
-		// 	}
-		// 	corpus.push_back(image);
-		// }
-		// void Corpus::_add_shape_to(boost::python::numpy::ndarray &shape_ndarray, std::vector<cv::Mat1d> &corpus){
-		// 	auto size = shape_ndarray.get_shape();
-		// 	auto stride = shape_ndarray.get_strides();
-		// 	cv::Mat1d shape(size[0], size[1]);
-		// 	for (int h = 0; h < size[0]; ++h) {
-		// 		for (int w = 0; w < size[1]; ++w) {
-		// 			double coord = *reinterpret_cast<double*>(shape_ndarray.get_data() + h * stride[0] + w * stride[1]);
-		// 			shape(h, w) = coord;
-		// 		}
-		// 	}
-		// 	corpus.push_back(shape);
-		// }
 		int Corpus::get_num_images(){
 			return _images.size();
 		}
@@ -100,12 +78,19 @@ namespace lbf {
 		}
 		cv::Mat1d & Corpus::get_rotation(int data_index){
 			assert(data_index < _rotation.size());
+			return _rotation[data_index];
 		}
 		cv::Mat1d & Corpus::get_rotation_inv(int data_index){
 			assert(data_index < _rotation_inv.size());
+			return _rotation_inv[data_index];
 		}
 		cv::Point2d & Corpus::get_shift(int data_index){
 			assert(data_index < _shift.size());
+			return _shift[data_index];
+		}
+		cv::Point2d & Corpus::get_shift_inv(int data_index){
+			assert(data_index < _shift_inv.size());
+			return _shift_inv[data_index];
 		}
 	}
 }
