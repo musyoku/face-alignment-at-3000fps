@@ -55,8 +55,21 @@ namespace lbf {
 					forest_of_landmark[landmark_index] = forest;
 				}
 			}
+
+			_linear_models_x_at_stage.resize(num_stages);
+			_linear_models_y_at_stage.resize(num_stages);
+			for(int stage = 0;stage < _num_stages;stage++){
+				std::vector<lbf::liblinear::model*> &linear_models_x = _linear_models_x_at_stage[stage];
+				std::vector<lbf::liblinear::model*> &linear_models_y = _linear_models_y_at_stage[stage];
+				linear_models_x.resize(num_landmarks);
+				linear_models_y.resize(num_landmarks);
+				for(int landmark_index = 0;landmark_index < num_landmarks;landmark_index++){
+					linear_models_x[landmark_index] = NULL;
+					linear_models_y[landmark_index] = NULL;
+				}
+			}
 		}
-		Forest* Model::get_forest_of(int stage, int landmark_index){
+		Forest* Model::get_forest(int stage, int landmark_index){
 			assert(stage < _num_stages);
 			assert(landmark_index < _num_landmarks);
 			std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];

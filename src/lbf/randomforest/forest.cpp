@@ -14,7 +14,7 @@ namespace lbf {
 
 			_trees.reserve(num_trees);
 			for(int n = 0;n < num_trees;n++){
-				Tree* tree = new Tree(tree_depth);
+				Tree* tree = new Tree(tree_depth, _landmark_index);
 				_trees.push_back(tree);
 			}
 		}
@@ -45,7 +45,7 @@ namespace lbf {
 			leaves.reserve(_num_trees);
 			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
 				Tree* tree = _trees[tree_index];
-				Node* leaf = tree->predict(shape, image, _landmark_index);
+				Node* leaf = tree->predict(shape, image);
 				assert(leaf->is_leaf() == true);
 				assert(0 <= leaf->identifier() && leaf->identifier() < tree->get_num_leaves());
 				leaves.push_back(leaf);

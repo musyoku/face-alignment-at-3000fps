@@ -2,38 +2,43 @@
 
 namespace lbf {
 	namespace randomforest {
-		Tree::Tree(int max_depth){
+		Tree::Tree(int max_depth, int landmark_index){
 			_max_depth = max_depth;
 			_autoincrement_leaf_index = 0;
-			_root = new Node(1);
+			_root = new Node(1, landmark_index);
 			_num_leaves = 0;
+			_landmark_index = landmark_index;
 		}
 		void Tree::train(std::set<int> &data_indices,
 						 std::vector<FeatureLocation> &sampled_feature_locations, 
 						 cv::Mat_<int> &pixel_differences, 
-						 std::vector<cv::Mat1d> &target_shapes)
+						 std::vector<cv::Mat1d> &regression_targets)
 		{
 			assert(data_indices.size() > 0);
-			split_node(_root, data_indices, sampled_feature_locations, pixel_differences, target_shapes);
+			split_node(_root, data_indices, sampled_feature_locations, pixel_differences, regression_targets);
 		}
 		void Tree::split_node(Node* node, 
 							  std::set<int> &data_indices,
 							  std::vector<FeatureLocation> &sampled_feature_locations, 
 							  cv::Mat_<int> &pixel_differences, 
-							  std::vector<cv::Mat1d> &target_shapes)
+							  std::vector<cv::Mat1d> &regression_targets)
 		{
 			assert(data_indices.size() > 0);
 			if(node->_depth > _max_depth){
 				node->_is_leaf = true;
 				node->_leaf_identifier = _autoincrement_leaf_index;
+				node->_assigned_data_indices = data_indices;
+				node->_update_delta_shape(regression_targets);
 				_autoincrement_leaf_index++;
 				_num_leaves++;
 				return;
 			}
-			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, target_shapes);
+			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, regression_targets);
 			if(need_to_split == false){
 				node->_is_leaf = true;
 				node->_leaf_identifier = _autoincrement_leaf_index;
+				node->_assigned_data_indices = data_indices;
+				node->_update_delta_shape(regression_targets);
 				_autoincrement_leaf_index++;
 				_num_leaves++;
 				return;
@@ -42,21 +47,21 @@ namespace lbf {
 			assert(node->_left_indices.size() > 0);
 			assert(node->_right_indices.size() > 0);
 
-			node->_left = new Node(node->_depth + 1);
-			node->_right = new Node(node->_depth + 1);
+			node->_left = new Node(node->_depth + 1, _landmark_index);
+			node->_right = new Node(node->_depth + 1, _landmark_index);
 
-			split_node(node->_left, node->_left_indices, sampled_feature_locations, pixel_differences, target_shapes);
-			split_node(node->_right, node->_right_indices, sampled_feature_locations, pixel_differences, target_shapes);
+			split_node(node->_left, node->_left_indices, sampled_feature_locations, pixel_differences, regression_targets);
+			split_node(node->_right, node->_right_indices, sampled_feature_locations, pixel_differences, regression_targets);
 		}
 		int Tree::get_num_leaves(){
 			return _num_leaves;
 		}
-		Node* Tree::predict(cv::Mat1d &shape, cv::Mat1b &image, int landmark_index){
+		Node* Tree::predict(cv::Mat1d &shape, cv::Mat1b &image){
 			int image_width = image.rows;
 			int image_height = image.cols;
-			assert(landmark_index < shape.rows);
-			double landmark_x = shape(landmark_index, 0);	// [-1, 1] : origin is the center of the image
-			double landmark_y = shape(landmark_index, 1);	// [-1, 1] : origin is the center of the image
+			assert(_landmark_index < shape.rows);
+			double landmark_x = shape(_landmark_index, 0);	// [-1, 1] : origin is the center of the image
+			double landmark_y = shape(_landmark_index, 1);	// [-1, 1] : origin is the center of the image
 
 			Node* node = _root;
 

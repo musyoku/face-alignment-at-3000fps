@@ -18,7 +18,7 @@ namespace lbf {
 			std::vector<std::vector<lbf::liblinear::model*>> _linear_models_y_at_stage;
 			Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, boost::python::list feature_radius);
 			Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, std::vector<double> &feature_radius);
-			randomforest::Forest* get_forest_of(int stage, int landmark_index);
+			randomforest::Forest* get_forest(int stage, int landmark_index);
 			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);

@@ -48,6 +48,7 @@ int main(){
 		shift.x = 1;
 		shift.y = 1;
 		training_corpus->_shift.push_back(shift);
+		training_corpus->_shift_inv.push_back(shift);
 	}
 	double* mean_shape = new double[68 * 2];
 	for(int landmark_index = 0;landmark_index < 68;landmark_index++){
@@ -68,9 +69,6 @@ int main(){
 	Dataset* dataset = new Dataset(training_corpus, validation_corpus, mean_shape_ndarray, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, feature_radius);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
-	for(int data_index = 0;data_index < training_corpus->get_num_images();data_index++){
-		trainer->get_predicted_shape(data_index, true);
-	}
 	trainer->train();
 
 	delete[] mean_shape;
