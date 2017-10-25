@@ -307,7 +307,7 @@ namespace lbf {
 		}
 		cv::Mat1d Trainer::project_current_estimated_shape(int augmented_data_index){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());
-			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];	// make a copy
+			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index].clone();	// make a copy
 			Corpus* corpus = _dataset->_training_corpus;
 			int data_index = _augmented_indices_to_data_index[augmented_data_index];
 
@@ -348,7 +348,7 @@ namespace lbf {
 		}
 		np::ndarray Trainer::python_estimate_shape_with_only_local_binary_features(int stage, int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());
-			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];
+			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index].clone();
 
 
 			cv::Mat1d projected_shape = project_current_estimated_shape(augmented_data_index);
