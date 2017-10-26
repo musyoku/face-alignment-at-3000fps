@@ -96,5 +96,96 @@ namespace lbf {
 			assert(landmark_index < linear_models_y.size());
 			return linear_models_y[landmark_index];
 		}
+		template <class Archive>
+		void Model::serialize(Archive &ar, unsigned int version){
+			boost::serialization::split_member(ar, *this, version);
+		}
+		template void Model::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
+		template void Model::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
+
+		void Model::save(boost::archive::binary_oarchive &ar, unsigned int version) const {
+			ar & _local_radius_at_stage;
+			save_liblinear_models(ar, _linear_models_x_at_stage);
+			save_liblinear_models(ar, _linear_models_y_at_stage);
+		}
+		void Model::save_liblinear_models(boost::archive::binary_oarchive &ar, const std::vector<std::vector<lbf::liblinear::model*>> &linear_models_at_stage) const {
+			for(int stage = 0;stage < _num_stages;stage++){
+				const std::vector<lbf::liblinear::model*> &linear_models = linear_models_at_stage[stage];
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+					lbf::liblinear::model const* model = linear_models[landmark_index];
+					bool skip_flag = false ? model == NULL : true;
+					ar & skip_flag;
+					if(skip_flag){
+						continue;
+					}
+					const lbf::liblinear::parameter &param = model->param;
+					int nr_feature = model->nr_feature;
+
+					ar & param.solver_type;
+					ar & model->nr_class;
+					ar & model->bias;
+
+					int w_size = nr_feature;
+					if(model->bias >= 0){
+						w_size = nr_feature + 1;
+					}
+					int nr_w = model->nr_class;
+					if(model->nr_class == 2 && param.solver_type != lbf::liblinear::MCSVM_CS){
+						nr_w = 1;
+					}
+					ar & nr_feature;
+					ar & nr_w;
+					ar & w_size;
+					for(int i = 0;i < w_size;i++){
+						for(int j = 0;j < nr_w;j++){
+							ar & model->w[i * nr_w + j];
+						}
+					}
+				}
+			}
+		}
+		void Model::load(boost::archive::binary_iarchive &ar, unsigned int version){
+			ar & _local_radius_at_stage;
+			load_liblinear_models(ar, _linear_models_x_at_stage);
+			load_liblinear_models(ar, _linear_models_y_at_stage);
+		}
+		void Model::load_liblinear_models(boost::archive::binary_iarchive &ar, std::vector<std::vector<lbf::liblinear::model*>> &linear_models_at_stage){
+			linear_models_at_stage.clear();
+			linear_models_at_stage.resize(_num_stages);
+
+			for(int stage = 0;stage < _num_stages;stage++){
+
+				std::vector<lbf::liblinear::model*> &linear_models = linear_models_at_stage[stage];
+				linear_models.clear();
+				linear_models.resize(_num_landmarks);
+
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+					bool skip_flag = true;
+					ar & skip_flag;
+					if(skip_flag){
+						continue;
+					}
+
+					lbf::liblinear::model* model = new lbf::liblinear::model;
+					ar & model->param.solver_type;
+					ar & model->nr_class;
+					ar & model->bias;
+					
+					int nr_feature = 0;
+					int nr_w = 0;
+					int w_size = 0;
+					ar & nr_feature;
+					ar & nr_w;
+					ar & w_size;
+					model->w = new double[w_size * nr_w];
+					for(int i = 0;i < w_size;i++){
+						for(int j = 0;j < nr_w;j++){
+							ar & model->w[i * nr_w + j];
+						}
+					}
+					linear_models[landmark_index] = model;
+				}
+			}
+		}
 	}
 }

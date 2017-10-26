@@ -112,9 +112,9 @@ namespace lbf {
 			}
 			cout << "#trees = " << num_total_trees << endl;
 			cout << "#features = " << num_total_leaves << endl;
-			struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
+			struct liblinear::feature_node** binary_features = new liblinear::feature_node*[_num_augmented_data];
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				binary_features[augmented_data_index] = new struct liblinear::feature_node[num_total_trees + 1];
+				binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
 			}
 			//// compute binary features
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){

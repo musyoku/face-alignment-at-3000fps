@@ -1,5 +1,10 @@
 #pragma once
 #include <boost/python.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
 #include <vector>
 #include "../lbf/liblinear/linear.h"
 #include "../lbf/randomforest/forest.h"
@@ -7,6 +12,14 @@
 namespace lbf {
 	namespace python {
 		class Model {
+		private:
+			friend class boost::serialization::access;
+			template <class Archive>
+			void serialize(Archive& archive, unsigned int version);
+			void save(boost::archive::binary_oarchive &archive, unsigned int version) const;
+			void save_liblinear_models(boost::archive::binary_oarchive &ar, const std::vector<std::vector<lbf::liblinear::model*>> &linear_models_at_stage) const;
+			void load(boost::archive::binary_iarchive &archive, unsigned int version);
+			void load_liblinear_models(boost::archive::binary_iarchive &ar, std::vector<std::vector<lbf::liblinear::model*>> &linear_models_at_stage);
 		public:
 			int _num_stages;
 			int _num_trees_per_forest;

@@ -2703,14 +2703,6 @@ namespace lbf {
 				return 0;
 		}
 
-		static const char *solver_type_table[]=
-		{
-			"L2R_LR", "L2R_L2LOSS_SVC_DUAL", "L2R_L2LOSS_SVC", "L2R_L1LOSS_SVC_DUAL", "MCSVM_CS",
-			"L1R_L2LOSS_SVC", "L1R_LR", "L2R_LR_DUAL",
-			"", "", "",
-			"L2R_L2LOSS_SVR", "L2R_L2LOSS_SVR_DUAL", "L2R_L1LOSS_SVR_DUAL", NULL
-		};
-
 		int save_model(const char *model_file_name, const struct model *model_)
 		{
 			int i;

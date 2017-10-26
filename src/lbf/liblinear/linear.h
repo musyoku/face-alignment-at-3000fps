@@ -20,6 +20,14 @@ namespace lbf {
 			double bias;            /* < 0 if no bias term */
 		};
 
+		static const char *solver_type_table[]=
+		{
+			"L2R_LR", "L2R_L2LOSS_SVC_DUAL", "L2R_L2LOSS_SVC", "L2R_L1LOSS_SVC_DUAL", "MCSVM_CS",
+			"L1R_L2LOSS_SVC", "L1R_LR", "L2R_LR_DUAL",
+			"", "", "",
+			"L2R_L2LOSS_SVR", "L2R_L2LOSS_SVR_DUAL", "L2R_L1LOSS_SVR_DUAL", NULL
+		};
+		
 		enum { L2R_LR, L2R_L2LOSS_SVC_DUAL, L2R_L2LOSS_SVC, L2R_L1LOSS_SVC_DUAL, MCSVM_CS, L1R_L2LOSS_SVC, L1R_LR, L2R_LR_DUAL, L2R_L2LOSS_SVR = 11, L2R_L2LOSS_SVR_DUAL, L2R_L1LOSS_SVR_DUAL }; /* solver_type */
 
 		struct parameter
