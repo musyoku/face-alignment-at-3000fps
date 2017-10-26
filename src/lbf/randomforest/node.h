@@ -12,8 +12,6 @@ namespace lbf {
 			friend class boost::serialization::access;
 			template <class Archive>
 			void serialize(Archive &ar, unsigned int version);
-			void save(boost::archive::binary_oarchive &ar, unsigned int version) const;
-			void load(boost::archive::binary_iarchive &ar, unsigned int version);
 		public:
 			int _depth;
 			int _is_leaf;

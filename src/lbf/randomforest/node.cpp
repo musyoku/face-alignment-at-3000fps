@@ -131,37 +131,24 @@ namespace lbf {
 		}
 		template <class Archive>
 		void Node::serialize(Archive &ar, unsigned int version){
-			boost::serialization::split_member(ar, *this, version);
+			ar & _depth;
+			ar & _is_leaf;
+			ar & _leaf_identifier;
+			ar & _landmark_index;
+			ar & _left_indices;
+			ar & _right_indices;
+			ar & _assigned_data_indices;
+			ar & _pixel_difference_threshold;
+			ar & _feature_location.a.x;
+			ar & _feature_location.a.y;
+			ar & _feature_location.b.x;
+			ar & _feature_location.b.y;
+			ar & _delta_shape.x;
+			ar & _delta_shape.y;
+			ar & _left;
+			ar & _right;
 		}
 		template void Node::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
 		template void Node::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
-		void Node::save(boost::archive::binary_oarchive &ar, unsigned int version) const{
-			ar & _depth;
-			ar & _is_leaf;
-			ar & _leaf_identifier;
-			ar & _landmark_index;
-			ar & _left_indices;
-			ar & _right_indices;
-			ar & _assigned_data_indices;
-			ar & _pixel_difference_threshold;
-			ar & _feature_location;
-			ar & _delta_shape;
-			ar & _left;
-			ar & _right;
-		}
-		void Node::load(boost::archive::binary_iarchive &ar, unsigned int version){
-			ar & _depth;
-			ar & _is_leaf;
-			ar & _leaf_identifier;
-			ar & _landmark_index;
-			ar & _left_indices;
-			ar & _right_indices;
-			ar & _assigned_data_indices;
-			ar & _pixel_difference_threshold;
-			ar & _feature_location;
-			ar & _delta_shape;
-			ar & _left;
-			ar & _right;
-		}
 	}
 }
