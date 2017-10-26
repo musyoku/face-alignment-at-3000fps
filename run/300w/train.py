@@ -269,15 +269,15 @@ def main():
 
 	# debug
 	if args.debug_directory is not None:
-		for data_index in range(training_corpus.get_num_images()):
+		for data_index in range(50):
 			augmented_data_index = data_index
 			image = training_corpus.get_image(data_index)
 
 			target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
-			imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_stage_{}_target_original.jpg".format(data_index, 0)))
+			imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_original_target_stage_{}.jpg".format(data_index, 0)))
 
 			estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-			imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage_{}_initial_shape.jpg".format(data_index, 0)))
+			imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_initial_shape_stage_{}.jpg".format(data_index, 0)))
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
@@ -285,18 +285,18 @@ def main():
 
 		# debug
 		if args.debug_directory is not None:
-			for data_index in range(training_corpus.get_num_images()):
+			for data_index in range(50):
 				augmented_data_index = data_index
 				image = training_corpus.get_image(data_index)
 
 				estimated_shape = trainer.estimate_shape_with_only_local_binary_features(stage, augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage{}.local.jpg".format(data_index, stage)))
+				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_local_stage_{}.jpg".format(data_index, stage)))
 				
 				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage_{}.jpg".format(data_index, stage)))
+				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_estimated_stage_{}.jpg".format(data_index, stage)))
 				
 				target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_stage_{}_target.jpg".format(data_index, stage)))
+				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
 
 
 if __name__ == "__main__":
