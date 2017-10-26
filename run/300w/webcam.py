@@ -1,9 +1,5 @@
 from imutils.video import VideoStream
-import argparse
-import imutils
-import time
-import dlib
-import cv2
+import argparse, imutils, time, dlib, cv2
 import lbf
 
 def main():
@@ -22,9 +18,11 @@ def main():
 
 		for rect in rects:
 			face = frame[rect.top():rect.bottom(), rect.left():rect.right()]
+			shape = model.estimate_shape(face)
 			# cv2.rectangle(frame, (rect.left(), rect.top()), (rect.right(), rect.bottom()), (255, 255, 255), 1)
+			cv2.imshow("face", face)
 		  
-		cv2.imshow("Frame", face)
+		cv2.imshow("frame", frame)
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord("q"):
 			break

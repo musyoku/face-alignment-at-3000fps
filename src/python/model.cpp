@@ -2,6 +2,7 @@
 #include <boost/serialization/vector.hpp>
 #include <fstream>
 #include <cassert>
+#include <iostream>
 #include "model.h"
 
 using namespace lbf::randomforest;
@@ -242,7 +243,139 @@ namespace lbf {
 			return success;
 		}
 		boost::python::numpy::ndarray Model::python_estimate_shape(boost::python::numpy::ndarray image_ndarray){
+			using namespace std;
+			auto image_size = image_ndarray.get_shape();
+			auto stride = image_ndarray.get_strides();
+			cv::Mat_<uchar> image(image_size[0], image_size[1]);
+			for (int h = 0; h < image_size[0]; ++h) {
+				for (int w = 0; w < image_size[1]; ++w) {
+					uchar value = *reinterpret_cast<uchar*>(image_ndarray.get_data() + h * stride[0] + w * stride[1]);
+					image(h, w) = value;
+				}
+			}
+			cv::Mat1d estimated_shape = _mean_shape.clone();
+			for(int stage = 0;stage < _num_stages;stage++){
+				int num_total_trees = 0;
+				int num_total_leaves = 0;
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+					Forest* forest = get_forest(stage, landmark_index);
+					num_total_trees += forest->get_num_trees();
+					num_total_leaves += forest->get_num_total_leaves();
+				}
+				cout << "#trees = " << num_total_trees << endl;
+				cout << "#features = " << num_total_leaves << endl;
 
+				//// compute binary features
+				struct liblinear::feature_node* binary_features = new liblinear::feature_node[num_total_trees + 1];
+				int feature_offset = 1;		// start with 1
+				int feature_pointer = 0;
+
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+					// find leaves
+					Forest* forest = get_forest(stage, landmark_index);
+					std::vector<Node*> leaves;
+					forest->predict(estimated_shape, image, leaves);
+					assert(leaves.size() == forest->get_num_trees());
+					// delta_shape
+					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
+						Tree* tree = forest->get_tree_at(tree_index);
+						int num_leaves = tree->get_num_leaves();
+						Node* leaf = leaves[tree_index];
+						assert(feature_pointer < num_total_trees + 1);
+						liblinear::feature_node &feature = binary_features[feature_pointer];
+						feature.index = feature_offset + leaf->identifier();
+						feature.value = 1.0;	// binary feature
+						feature_pointer++;
+						feature_offset += tree->get_num_leaves();
+					}
+				}
+				liblinear::feature_node &feature = binary_features[feature_pointer];
+				feature.index = -1;
+				feature.value = -1;
+
+
+				// struct liblinear::problem* problem = new struct liblinear::problem;
+				// problem->l = _num_augmented_data;
+				// problem->n = num_total_leaves;
+				// problem->x = binary_features;
+				// problem->bias = -1;
+
+				// struct liblinear::parameter* parameter = new struct liblinear::parameter;
+				// parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
+				// parameter->C = 1.0;
+				// parameter->p = 0;
+
+			 //    double** targets = new double*[_num_landmarks];
+				// for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+				// 	targets[landmark_index] = new double[_num_augmented_data];
+				// }
+
+				// // train regressor
+				// #pragma omp parallel for
+				// for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+				// 	cout << "." << flush;
+
+				// 	// train x
+				// 	for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+				// 		cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
+				// 		cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
+
+				// 		double delta_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
+
+				// 		targets[landmark_index][augmented_data_index] = delta_x;
+				// 	}
+				// 	problem->y = targets[landmark_index];
+				// 	liblinear::check_parameter(problem, parameter);
+			 //        struct liblinear::model* model_x = liblinear::train(problem, parameter);
+
+				// 	// train y
+				// 	for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+				// 		cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
+				// 		cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
+
+				// 		double delta_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
+
+				// 		targets[landmark_index][augmented_data_index] = delta_y;
+				// 	}
+				// 	problem->y = targets[landmark_index];
+				// 	liblinear::check_parameter(problem, parameter);
+			 //        struct liblinear::model* model_y = liblinear::train(problem, parameter);
+
+			 //        set_linear_models(model_x, model_y, stage, landmark_index);
+				// }
+
+				// cout << endl;
+
+				// predict shape
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+
+					struct liblinear::model* model_x = get_linear_model_x_at(stage, landmark_index);
+					struct liblinear::model* model_y = get_linear_model_y_at(stage, landmark_index);
+
+					if(model_x == NULL){
+						continue;
+					}
+					if(model_y == NULL){
+						continue;
+					}
+
+					double delta_x = liblinear::predict(model_x, binary_features);
+					double delta_y = liblinear::predict(model_y, binary_features);
+
+					// update shape
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
+				}
+			}
+
+			boost::python::tuple size = boost::python::make_tuple(estimated_shape.rows, estimated_shape.cols);
+			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+			for(int h = 0;h < estimated_shape.rows;h++) {
+				for(int w = 0;w < estimated_shape.cols;w++) {
+					shape_ndarray[h][w] = estimated_shape(h, w);
+				}
+			}
+			return shape_ndarray;
 		}
 		boost::python::numpy::ndarray Model::python_get_mean_shape(){
 			boost::python::tuple size = boost::python::make_tuple(_mean_shape.rows, _mean_shape.cols);
