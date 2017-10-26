@@ -72,7 +72,7 @@ namespace lbf {
 				for(int n = 0;n < augmentation_size;n++){
 					int augmented_data_index = (n + 1) * num_data + data_index;
 					int shape_index = initial_shape_indices[n];
-					_augmented_estimated_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index);
+					_augmented_estimated_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index).clone();	// make a copy
 					_augmented_target_shapes[augmented_data_index] = corpus->get_shape(data_index);
 					_augmented_indices_to_data_index[augmented_data_index] = data_index;
 				}
@@ -169,7 +169,7 @@ namespace lbf {
 			}
 
 			// train regressor
-			// #pragma omp parallel for
+			#pragma omp parallel for
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 				cout << "." << flush;
 
@@ -340,6 +340,40 @@ namespace lbf {
 			shape = shape_T;
 
 			return shape;
+		}
+		np::ndarray Trainer::python_get_target_shape(int augmented_data_index, bool transform){
+			assert(augmented_data_index < _augmented_target_shapes.size());
+			cv::Mat1d shape = _augmented_target_shapes[augmented_data_index];
+
+			if(transform){
+				Corpus* corpus = _dataset->_training_corpus;
+				int data_index = _augmented_indices_to_data_index[augmented_data_index];
+
+				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
+				cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+				cv::Mat1d shift_inv(2, 1);
+				shift_inv(0, 0) = _shift_inv.x;
+				shift_inv(1, 0) = _shift_inv.y;
+
+				// inverse
+				cv::Mat1d shape_T(shape.cols, shape.rows);
+				cv::transpose(shape, shape_T);
+				shape = rotation_inv * shape_T;
+				for (int w = 0; w < shape.cols; ++w) {
+					shape.col(w) += shift_inv;
+				}
+				cv::transpose(shape, shape_T);
+				shape = shape_T;
+			}
+
+			boost::python::tuple size = boost::python::make_tuple(shape.rows, shape.cols);
+			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+			for(int h = 0;h < shape.rows;h++) {
+				for(int w = 0;w < shape.cols;w++) {
+					shape_ndarray[h][w] = shape(h, w);
+				}
+			}
+			return shape_ndarray;
 		}
 		np::ndarray Trainer::python_get_current_estimated_shape(int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());

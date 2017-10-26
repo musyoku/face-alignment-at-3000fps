@@ -211,6 +211,18 @@ def build_corpus():
 
 	return training_corpus, validation_corpus, mean_shape
 
+def imwrite(image, shape, filename):
+	image_height = image.shape[0]
+	image_width = image.shape[1]
+	for (x, y) in shape:
+		x = int(image_width / 2 + x * image_width / 2)
+		y = int(image_height / 2 + y * image_height / 2)
+		
+		cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
+		cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+
+	cv2.imwrite(os.path.join(args.debug_directory, filename), image)
+
 def main():
 	assert args.dataset_directory is not None
 
@@ -261,33 +273,17 @@ def main():
 		# debug
 		if args.debug_directory is not None:
 			for data_index in range(training_corpus.get_num_images()):
-				augmented_data_index = data_index + training_corpus.get_num_images() * 2
+				augmented_data_index = data_index
 				image = training_corpus.get_image(data_index)
+
 				estimated_shape = trainer.estimate_shape_with_only_local_binary_features(stage, augmented_data_index, transform=True)
-				image_height = image.shape[0]
-				image_width = image.shape[1]
-				for (x, y) in estimated_shape:
-					x = int(image_width / 2 + x * image_width / 2)
-					y = int(image_height / 2 + y * image_height / 2)
-					
-					cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
-					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
-
-				cv2.imwrite(os.path.join(args.debug_directory, "{}_stage{}.local.jpg".format(data_index, stage)), image)
+				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage{}.local.jpg".format(data_index, stage)))
 				
-				image = training_corpus.get_image(data_index)
 				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-				image_height = image.shape[0]
-				image_width = image.shape[1]
-				for (x, y) in estimated_shape:
-					x = int(image_width / 2 + x * image_width / 2)
-					y = int(image_height / 2 + y * image_height / 2)
-					
-					cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
-					cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
-
-				cv2.imwrite(os.path.join(args.debug_directory, "{}_stage_{}.jpg".format(data_index, stage)), image)
-
+				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage_{}.jpg".format(data_index, stage)))
+				
+				target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
+				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_stage_{}_target.jpg".format(data_index, stage)))
 
 
 if __name__ == "__main__":
