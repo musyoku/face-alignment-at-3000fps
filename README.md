@@ -1,4 +1,11 @@
-# Face Alignment at 3000 FPS via Regressing Local Binary Features
+# [WIP]Face Alignment at 3000 FPS via Regressing Local Binary Features
+
+# Work in Progress
+
+- [x] Training local binary features
+- [x] Training global linear regression
+- [ ] Validation 
+- [ ] Model serialization 
 
 ## Referrences
 
