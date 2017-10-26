@@ -51,7 +51,7 @@ namespace lbf {
 		int Corpus::get_num_images(){
 			return _images.size();
 		}
-		cv::Mat1d & Corpus::get_shape(int data_index){
+		cv::Mat1d & Corpus::get_original_shape(int data_index){
 			assert(data_index < _shapes.size());
 			return _shapes[data_index];
 		}

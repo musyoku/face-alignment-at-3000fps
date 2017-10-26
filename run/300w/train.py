@@ -214,6 +214,7 @@ def build_corpus():
 def imwrite(image, shape, filename):
 	image_height = image.shape[0]
 	image_width = image.shape[1]
+	white = (255, 255, 255)
 	for (x, y) in shape:
 		x = int(image_width / 2 + x * image_width / 2)
 		y = int(image_height / 2 + y * image_height / 2)
@@ -265,6 +266,18 @@ def main():
 	trainer = lbf.trainer(dataset=dataset, 
 						  model=model,
 						  num_features_to_sample=args.num_training_features)
+
+	# debug
+	if args.debug_directory is not None:
+		for data_index in range(training_corpus.get_num_images()):
+			augmented_data_index = data_index
+			image = training_corpus.get_image(data_index)
+
+			target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
+			imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_stage_{}_target_original.jpg".format(data_index, 0)))
+
+			estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
+			imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_stage_{}_initial_shape.jpg".format(data_index, 0)))
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)

@@ -60,8 +60,8 @@ namespace lbf {
 
 			// normalized shape
 			for(int data_index = 0;data_index < num_data;data_index++){
-				_augmented_estimated_shapes[data_index] = corpus->get_normalized_shape(data_index).clone();	// make a copy
-				_augmented_target_shapes[data_index] = corpus->get_shape(data_index);
+				_augmented_estimated_shapes[data_index] = _dataset->_mean_shape.clone();	// make a copy
+				_augmented_target_shapes[data_index] = corpus->get_normalized_shape(data_index);
 				_augmented_indices_to_data_index[data_index] = data_index;
 			}
 
@@ -73,7 +73,7 @@ namespace lbf {
 					int augmented_data_index = (n + 1) * num_data + data_index;
 					int shape_index = initial_shape_indices[n];
 					_augmented_estimated_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index).clone();	// make a copy
-					_augmented_target_shapes[augmented_data_index] = corpus->get_shape(data_index);
+					_augmented_target_shapes[augmented_data_index] = corpus->get_normalized_shape(data_index);
 					_augmented_indices_to_data_index[augmented_data_index] = data_index;
 				}
 			}

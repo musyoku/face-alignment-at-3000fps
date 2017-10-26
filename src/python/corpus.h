@@ -26,7 +26,7 @@ namespace lbf {
 					 boost::python::numpy::ndarray shift,
 					 boost::python::numpy::ndarray shift_inv);
 			int get_num_images();
-			cv::Mat1d & get_shape(int data_index);
+			cv::Mat1d & get_original_shape(int data_index);
 			cv::Mat1d & get_normalized_shape(int data_index);
 			cv::Mat1b & get_image(int data_index);
 			cv::Mat1d & get_rotation(int data_index);
