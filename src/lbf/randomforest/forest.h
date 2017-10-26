@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/serialization/serialization.hpp>
 #include <vector>
 #include "../common.h"
 #include "tree.h"
@@ -6,6 +7,10 @@
 namespace lbf {
 	namespace randomforest {
 		class Forest {
+		private:
+			friend class boost::serialization::access;
+			template <class Archive>
+			void serialize(Archive &ar, unsigned int version);
 		public:
 			int _stage;
 			int _landmark_index;

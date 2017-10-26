@@ -282,6 +282,7 @@ def main():
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
 		# trainer.train_local_binary_features_at_stage(stage)
+		model.save("lbf.model")
 
 		# debug
 		if args.debug_directory is not None:

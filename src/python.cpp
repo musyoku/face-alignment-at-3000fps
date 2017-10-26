@@ -20,7 +20,9 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, np::ndarray, int>((args("training_corpus", "validation_corpus", "mean_shape_ndarray", "augmentation_size"))))
 	.def("get_num_training_images", &Dataset::get_num_training_images);
 	
-	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "feature_radius"))));
+	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "feature_radius"))))
+	.def("save", &Model::python_save)
+	.def("load", &Model::python_load);
 
 	boost::python::class_<Trainer>("trainer", boost::python::init<Dataset*, Model*, int>((args("dataset", "model", "num_features_to_sample"))))
 	.def("get_current_estimated_shape", &Trainer::python_get_current_estimated_shape, ((args("data_index"), arg("transform")=true)))

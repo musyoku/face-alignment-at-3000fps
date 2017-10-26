@@ -1,3 +1,6 @@
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
 #include <cassert>
 #include <set>
 #include "../sampler.h"
@@ -62,5 +65,17 @@ namespace lbf {
 		int Forest::get_num_total_leaves(){
 			return _num_total_leaves;
 		}
+		template <class Archive>
+		void Forest::serialize(Archive &ar, unsigned int version){
+			ar & _stage;
+			ar & _landmark_index;
+			ar & _num_trees;
+			ar & _num_features_to_sample;
+			ar & _num_total_leaves;
+			ar & _radius;
+			ar & _trees;
+		}
+		template void Forest::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
+		template void Forest::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
 	}
 }

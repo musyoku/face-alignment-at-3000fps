@@ -1,3 +1,5 @@
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include "forest.h"
 
 namespace lbf {
@@ -98,5 +100,14 @@ namespace lbf {
 			}
 			return node;
 		}
+		template <class Archive>
+		void Tree::serialize(Archive &ar, unsigned int version){
+			ar & _autoincrement_leaf_index;
+			ar & _num_leaves;
+			ar & _landmark_index;
+			ar & _root;
+		}
+		template void Tree::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
+		template void Tree::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
 	}
 }

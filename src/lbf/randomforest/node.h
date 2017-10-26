@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/serialization/serialization.hpp>
 #include <opencv/opencv.hpp>
 #include <vector>
 #include <set>
@@ -7,6 +8,12 @@
 namespace lbf {
 	namespace randomforest {
 		class Node {
+		private:
+			friend class boost::serialization::access;
+			template <class Archive>
+			void serialize(Archive &ar, unsigned int version);
+			void save(boost::archive::binary_oarchive &ar, unsigned int version) const;
+			void load(boost::archive::binary_iarchive &ar, unsigned int version);
 		public:
 			int _depth;
 			int _is_leaf;
@@ -20,6 +27,7 @@ namespace lbf {
 			cv::Point2d _delta_shape;
 			Node* _left;
 			Node* _right;
+			Node(){};
 			Node(int depth, int landmark_index){
 				_left = NULL;
 				_right = NULL;

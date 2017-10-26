@@ -1,3 +1,6 @@
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/vector.hpp>
+#include <fstream>
 #include <cassert>
 #include "model.h"
 
@@ -102,9 +105,14 @@ namespace lbf {
 		}
 		template void Model::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
 		template void Model::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
-
+		
 		void Model::save(boost::archive::binary_oarchive &ar, unsigned int version) const {
+			ar & _num_stages;
+			ar & _num_trees_per_forest;
+			ar & _num_landmarks;
+			ar & _tree_depth;
 			ar & _local_radius_at_stage;
+			ar & _forest_at_stage;
 			save_liblinear_models(ar, _linear_models_x_at_stage);
 			save_liblinear_models(ar, _linear_models_y_at_stage);
 		}
@@ -145,7 +153,12 @@ namespace lbf {
 			}
 		}
 		void Model::load(boost::archive::binary_iarchive &ar, unsigned int version){
+			ar & _num_stages;
+			ar & _num_trees_per_forest;
+			ar & _num_landmarks;
+			ar & _tree_depth;
 			ar & _local_radius_at_stage;
+			ar & _forest_at_stage;
 			load_liblinear_models(ar, _linear_models_x_at_stage);
 			load_liblinear_models(ar, _linear_models_y_at_stage);
 		}
@@ -186,6 +199,28 @@ namespace lbf {
 					linear_models[landmark_index] = model;
 				}
 			}
+		}
+		bool Model::python_save(std::string filename){
+			bool success = false;
+			std::ofstream ofs(filename);
+			if(ofs.good()){
+				boost::archive::binary_oarchive oarchive(ofs);
+				oarchive << *this;
+				success = true;
+			}
+			ofs.close();
+			return success;
+		}
+		bool Model::python_load(std::string filename){
+			bool success = false;
+			std::ifstream ifs(filename);
+			if(ifs.good()){
+				boost::archive::binary_iarchive iarchive(ifs);
+				iarchive >> *this;
+				success = true;
+			}
+			ifs.close();
+			return success;
 		}
 	}
 }

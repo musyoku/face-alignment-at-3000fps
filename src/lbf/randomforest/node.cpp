@@ -1,3 +1,6 @@
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/set.hpp>
 #include <iostream>
 #include "../sampler.h"
 #include "node.h"
@@ -125,6 +128,40 @@ namespace lbf {
 			_leaf_identifier = leaf_identifier;
 			_assigned_data_indices = data_indices;
 			_update_delta_shape(regression_targets);
+		}
+		template <class Archive>
+		void Node::serialize(Archive &ar, unsigned int version){
+			boost::serialization::split_member(ar, *this, version);
+		}
+		template void Node::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
+		template void Node::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
+		void Node::save(boost::archive::binary_oarchive &ar, unsigned int version) const{
+			ar & _depth;
+			ar & _is_leaf;
+			ar & _leaf_identifier;
+			ar & _landmark_index;
+			ar & _left_indices;
+			ar & _right_indices;
+			ar & _assigned_data_indices;
+			ar & _pixel_difference_threshold;
+			ar & _feature_location;
+			ar & _delta_shape;
+			ar & _left;
+			ar & _right;
+		}
+		void Node::load(boost::archive::binary_iarchive &ar, unsigned int version){
+			ar & _depth;
+			ar & _is_leaf;
+			ar & _leaf_identifier;
+			ar & _landmark_index;
+			ar & _left_indices;
+			ar & _right_indices;
+			ar & _assigned_data_indices;
+			ar & _pixel_difference_threshold;
+			ar & _feature_location;
+			ar & _delta_shape;
+			ar & _left;
+			ar & _right;
 		}
 	}
 }

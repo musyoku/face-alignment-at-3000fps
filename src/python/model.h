@@ -1,10 +1,8 @@
 #pragma once
 #include <boost/python.hpp>
 #include <boost/serialization/serialization.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
 #include <vector>
 #include "../lbf/liblinear/linear.h"
 #include "../lbf/randomforest/forest.h"
@@ -15,7 +13,7 @@ namespace lbf {
 		private:
 			friend class boost::serialization::access;
 			template <class Archive>
-			void serialize(Archive& archive, unsigned int version);
+			void serialize(Archive &archive, unsigned int version);
 			void save(boost::archive::binary_oarchive &archive, unsigned int version) const;
 			void save_liblinear_models(boost::archive::binary_oarchive &ar, const std::vector<std::vector<lbf::liblinear::model*>> &linear_models_at_stage) const;
 			void load(boost::archive::binary_iarchive &archive, unsigned int version);
@@ -35,6 +33,8 @@ namespace lbf {
 			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);
+			bool python_save(std::string filename);
+			bool python_load(std::string filename);
 		};
 	}
 }

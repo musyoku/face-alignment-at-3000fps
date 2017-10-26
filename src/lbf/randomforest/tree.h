@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/serialization/serialization.hpp>
 #include <opencv/opencv.hpp>
 #include <vector>
 #include <set>
@@ -12,6 +13,9 @@ namespace lbf {
 			int _autoincrement_leaf_index;
 			int _num_leaves;
 			int _landmark_index;
+			friend class boost::serialization::access;
+			template <class Archive>
+			void serialize(Archive &ar, unsigned int version);
 		public:
 			int _max_depth;
 			Tree(){};
