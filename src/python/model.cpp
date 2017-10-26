@@ -4,21 +4,43 @@
 #include <cassert>
 #include "model.h"
 
+using namespace lbf::randomforest;
+namespace np = boost::python::numpy;
+
 namespace lbf {
-	using namespace randomforest;
 	namespace python {
-		Model::Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, boost::python::list feature_radius){
+		Model::Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, np::ndarray mean_shape_ndarray, boost::python::list feature_radius){
+			std::vector<double> feature_radius_vector;
+			int num_words = boost::python::len(feature_radius);
+			for(int i = 0;i < num_words;i++){
+				double radius = boost::python::extract<double>(feature_radius[i]);
+				feature_radius_vector.push_back(radius);
+			}
+			_init(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius_vector);
+		}
+		Model::Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, np::ndarray mean_shape_ndarray, std::vector<double> &feature_radius){
+			_init(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
+		}
+		void Model::_init(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, np::ndarray &mean_shape_ndarray, std::vector<double> &feature_radius){
 			_num_stages = num_stages;
 			_num_trees_per_forest = num_trees_per_forest;
 			_num_landmarks = num_landmarks;
 			_tree_depth = tree_depth;
+			_local_radius_at_stage = feature_radius;
 
-			assert(num_stages == boost::python::len(feature_radius));
-			for(int stage = 0;stage < num_stages;stage++){
-				double radius = boost::python::extract<double>(feature_radius[stage]);
-				_local_radius_at_stage.push_back(radius);
+			// convert mean shape to cv::Mat
+			auto size = mean_shape_ndarray.get_shape();
+			auto stride = mean_shape_ndarray.get_strides();
+			cv::Mat1d mean_shape(size[0], size[1]);
+			for (int h = 0; h < size[0]; ++h) {
+				for (int w = 0; w < size[1]; ++w) {
+					double coord = *reinterpret_cast<double*>(mean_shape_ndarray.get_data() + h * stride[0] + w * stride[1]);
+					mean_shape(h, w) = coord;
+				}
 			}
+			_mean_shape = mean_shape;
 
+			// build forests
 			_forest_at_stage.resize(num_stages);
 			for(int stage = 0;stage < _num_stages;stage++){
 				std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];
@@ -29,6 +51,7 @@ namespace lbf {
 				}
 			}
 
+			// liblinear
 			_linear_models_x_at_stage.resize(num_stages);
 			_linear_models_y_at_stage.resize(num_stages);
 			for(int stage = 0;stage < _num_stages;stage++){
@@ -42,34 +65,10 @@ namespace lbf {
 				}
 			}
 		}
-		Model::Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, std::vector<double> &feature_radius){
-			_num_stages = num_stages;
-			_num_trees_per_forest = num_trees_per_forest;
-			_num_landmarks = num_landmarks;
-			_tree_depth = tree_depth;
-			_local_radius_at_stage = feature_radius;
-
-			_forest_at_stage.resize(num_stages);
-			for(int stage = 0;stage < _num_stages;stage++){
-				std::vector<Forest*> &forest_of_landmark = _forest_at_stage[stage];
-				forest_of_landmark.resize(num_landmarks);
-				for(int landmark_index = 0;landmark_index < num_landmarks;landmark_index++){
-					Forest* forest = new Forest(stage, landmark_index, _num_trees_per_forest, _local_radius_at_stage[stage], _tree_depth);
-					forest_of_landmark[landmark_index] = forest;
-				}
-			}
-
-			_linear_models_x_at_stage.resize(num_stages);
-			_linear_models_y_at_stage.resize(num_stages);
-			for(int stage = 0;stage < _num_stages;stage++){
-				std::vector<lbf::liblinear::model*> &linear_models_x = _linear_models_x_at_stage[stage];
-				std::vector<lbf::liblinear::model*> &linear_models_y = _linear_models_y_at_stage[stage];
-				linear_models_x.resize(num_landmarks);
-				linear_models_y.resize(num_landmarks);
-				for(int landmark_index = 0;landmark_index < num_landmarks;landmark_index++){
-					linear_models_x[landmark_index] = NULL;
-					linear_models_y[landmark_index] = NULL;
-				}
+		Model::Model(std::string filename){
+			if(python_load(filename) == false){
+				std::cout << filename << " not found." << std::endl;
+				exit(0);
 			}
 		}
 		Forest* Model::get_forest(int stage, int landmark_index){
@@ -105,7 +104,7 @@ namespace lbf {
 		}
 		template void Model::serialize(boost::archive::binary_iarchive &ar, unsigned int version);
 		template void Model::serialize(boost::archive::binary_oarchive &ar, unsigned int version);
-		
+
 		void Model::save(boost::archive::binary_oarchive &ar, unsigned int version) const {
 			ar & _num_stages;
 			ar & _num_trees_per_forest;
@@ -113,6 +112,13 @@ namespace lbf {
 			ar & _tree_depth;
 			ar & _local_radius_at_stage;
 			ar & _forest_at_stage;
+			ar & _mean_shape.rows;
+			ar & _mean_shape.cols;
+			for(int h = 0;h < _mean_shape.rows;h++){
+				for(int w = 0;w < _mean_shape.cols;w++){
+					ar & _mean_shape(h, w);
+				}
+			}
 			save_liblinear_models(ar, _linear_models_x_at_stage);
 			save_liblinear_models(ar, _linear_models_y_at_stage);
 		}
@@ -159,6 +165,19 @@ namespace lbf {
 			ar & _tree_depth;
 			ar & _local_radius_at_stage;
 			ar & _forest_at_stage;
+
+			int rows = 0;
+			int cols = 0;
+			ar & rows;
+			ar & cols;
+			_mean_shape = cv::Mat1d(rows, cols);
+			for(int h = 0;h < rows;h++){
+				for(int w = 0;w < cols;w++){
+					double value;
+					ar & value;
+					_mean_shape(h, w) = value;
+				}
+			}
 			load_liblinear_models(ar, _linear_models_x_at_stage);
 			load_liblinear_models(ar, _linear_models_y_at_stage);
 		}
@@ -221,6 +240,19 @@ namespace lbf {
 			}
 			ifs.close();
 			return success;
+		}
+		boost::python::numpy::ndarray Model::python_estimate_shape(boost::python::numpy::ndarray image_ndarray){
+
+		}
+		boost::python::numpy::ndarray Model::python_get_mean_shape(){
+			boost::python::tuple size = boost::python::make_tuple(_mean_shape.rows, _mean_shape.cols);
+			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+			for(int h = 0;h < _mean_shape.rows;h++) {
+				for(int w = 0;w < _mean_shape.cols;w++) {
+					shape_ndarray[h][w] = _mean_shape(h, w);
+				}
+			}
+			return shape_ndarray;
 		}
 	}
 }

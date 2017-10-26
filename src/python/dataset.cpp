@@ -6,22 +6,10 @@ using std::endl;
 
 namespace lbf {
 	namespace python {
-		Dataset::Dataset(Corpus* training_corpus, Corpus* validation_corpus, boost::python::numpy::ndarray mean_shape_ndarray, int augmentation_size){
+		Dataset::Dataset(Corpus* training_corpus, Corpus* validation_corpus, int augmentation_size){
 			_augmentation_size = augmentation_size;
 			_training_corpus = training_corpus;
 			_validation_corpus = validation_corpus;
-
-			// convert mean shape to cv::Mat
-			auto size = mean_shape_ndarray.get_shape();
-			auto stride = mean_shape_ndarray.get_strides();
-			cv::Mat1d mean_shape(size[0], size[1]);
-			for (int h = 0; h < size[0]; ++h) {
-				for (int w = 0; w < size[1]; ++w) {
-					double coord = *reinterpret_cast<double*>(mean_shape_ndarray.get_data() + h * stride[0] + w * stride[1]);
-					mean_shape(h, w) = coord;
-				}
-			}
-			_mean_shape = mean_shape;
 
 			// sample shapes to augment data
 			int num_training_images = training_corpus->get_num_images();

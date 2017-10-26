@@ -60,7 +60,7 @@ namespace lbf {
 
 			// normalized shape
 			for(int data_index = 0;data_index < num_data;data_index++){
-				_augmented_estimated_shapes[data_index] = _dataset->_mean_shape.clone();	// make a copy
+				_augmented_estimated_shapes[data_index] = _model->_mean_shape.clone();	// make a copy
 				_augmented_target_shapes[data_index] = corpus->get_normalized_shape(data_index);
 				_augmented_indices_to_data_index[data_index] = data_index;
 			}

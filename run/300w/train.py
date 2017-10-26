@@ -250,7 +250,6 @@ def main():
 	# initialize dataset
 	dataset = lbf.dataset(training_corpus=training_corpus, 
 						  validation_corpus=validation_corpus,
-						  mean_shape_ndarray=mean_shape, 
 						  augmentation_size=args.augmentation_size)
 
 	# initlaize model
@@ -260,7 +259,9 @@ def main():
 					  num_trees_per_forest=args.num_trees,
 					  tree_depth=args.tree_depth,
 					  num_landmarks=len(mean_shape),
+					  mean_shape_ndarray=mean_shape, 
 					  feature_radius=feature_radius)
+	model.save(args.model_filename)
 
 	# training
 	trainer = lbf.trainer(dataset=dataset, 
@@ -282,7 +283,7 @@ def main():
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
 		# trainer.train_local_binary_features_at_stage(stage)
-		model.save("lbf.model")
+		model.save(args.model_filename)
 
 		# debug
 		if args.debug_directory is not None:
@@ -304,6 +305,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--debug-directory", "-debug", type=str, default=None)
+	parser.add_argument("--model-filename", "-model", type=str, default="lbf.model")
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=6)

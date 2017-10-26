@@ -17,10 +17,13 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("get_num_images", &Corpus::get_num_images)
 	.def("add", &Corpus::add);
 
-	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, np::ndarray, int>((args("training_corpus", "validation_corpus", "mean_shape_ndarray", "augmentation_size"))))
+	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, int>((args("training_corpus", "validation_corpus", "augmentation_size"))))
 	.def("get_num_training_images", &Dataset::get_num_training_images);
 	
-	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "feature_radius"))))
+	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, np::ndarray, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "mean_shape_ndarray", "feature_radius"))))
+	.def(boost::python::init<std::string>())
+	.def("estimate_shape", &Model::python_estimate_shape)
+	.def("get_mean_shape", &Model::python_get_mean_shape)
 	.def("save", &Model::python_save)
 	.def("load", &Model::python_load);
 
