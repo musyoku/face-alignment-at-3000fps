@@ -20,10 +20,10 @@ namespace lbf {
 		}
 		void Forest::train(std::vector<FeatureLocation> &feature_locations, 
 						   cv::Mat_<int> &pixel_differences, 
-						   std::vector<cv::Mat1d> &target_shapes)
+						   std::vector<cv::Mat1d> &regression_targets)
 		{
 			assert(feature_locations.size() == pixel_differences.rows);
-			assert(pixel_differences.cols == target_shapes.size());
+			assert(pixel_differences.cols == regression_targets.size());
 			int num_data = pixel_differences.cols;
 			assert(num_data > 0);
 			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
@@ -36,7 +36,7 @@ namespace lbf {
 				assert(sampled_indices.size() > 0);
 				// build tree
 				Tree* tree = _trees[tree_index];
-				tree->train(sampled_indices, feature_locations, pixel_differences, target_shapes);
+				tree->train(sampled_indices, feature_locations, pixel_differences, regression_targets);
 				_num_total_leaves += tree->get_num_leaves();
 			}
 		}

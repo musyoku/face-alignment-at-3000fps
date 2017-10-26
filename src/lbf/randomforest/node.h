@@ -35,6 +35,7 @@ namespace lbf {
 			int identifier();
 			bool is_leaf();
 			void _update_delta_shape(std::vector<cv::Mat1d> &regression_targets);
+			void mark_as_leaf(int leaf_identifier, std::set<int> &data_indices, std::vector<cv::Mat1d> &regression_targets);
 		};
 	}
 }

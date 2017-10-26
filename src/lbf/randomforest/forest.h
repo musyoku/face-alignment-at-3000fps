@@ -18,7 +18,7 @@ namespace lbf {
 			Forest(int stage, int landmark_index, int num_trees, double radius, int tree_depth);
 			void train(std::vector<FeatureLocation> &sampled_feature_locations, 
 					   cv::Mat_<int> &pixel_differences, 
-					   std::vector<cv::Mat1d> &target_shapes);
+					   std::vector<cv::Mat1d> &regression_targets);
 			void predict(cv::Mat1d &shape, cv::Mat1b &image, std::vector<Node*> &leaves);
 			Tree* get_tree_at(int tree_index);
 			int get_num_trees();

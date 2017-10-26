@@ -60,7 +60,7 @@ namespace lbf {
 
 			// normalized shape
 			for(int data_index = 0;data_index < num_data;data_index++){
-				_augmented_estimated_shapes[data_index] = corpus->get_normalized_shape(data_index);
+				_augmented_estimated_shapes[data_index] = corpus->get_normalized_shape(data_index).clone();	// make a copy
 				_augmented_target_shapes[data_index] = corpus->get_shape(data_index);
 				_augmented_indices_to_data_index[data_index] = data_index;
 			}
@@ -111,10 +111,10 @@ namespace lbf {
 				num_total_leaves += forest->get_num_total_leaves();
 			}
 			cout << "#trees = " << num_total_trees << endl;
-			cout << "#leaves = " << num_total_leaves << endl;
+			cout << "#features = " << num_total_leaves << endl;
 			struct liblinear::feature_node** binary_features = new struct liblinear::feature_node*[_num_augmented_data];
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
+				binary_features[augmented_data_index] = new struct liblinear::feature_node[num_total_trees + 1];
 			}
 			//// compute binary features
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
@@ -125,9 +125,6 @@ namespace lbf {
 				int feature_pointer = 0;
 
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-					if (PyErr_CheckSignals() != 0) {
-						return;		
-					}
 					// find leaves
 					Forest* forest = _model->get_forest(stage, landmark_index);
 					std::vector<Node*> leaves;
@@ -135,7 +132,6 @@ namespace lbf {
 					assert(leaves.size() == forest->get_num_trees());
 					// delta_shape
 					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
-						// cout << "tree_index = " << tree_index << endl;
 						Tree* tree = forest->get_tree_at(tree_index);
 						int num_leaves = tree->get_num_leaves();
 						Node* leaf = leaves[tree_index];
@@ -143,7 +139,6 @@ namespace lbf {
 						liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
 						feature.index = feature_offset + leaf->identifier();
 						feature.value = 1.0;	// binary feature
-						// cout << "(" << feature_offset + leaf->identifier() << ", 1)" << "; leaf = " << leaf->identifier() << endl;
 						feature_pointer++;
 						feature_offset += tree->get_num_leaves();
 					}
@@ -151,6 +146,10 @@ namespace lbf {
 				liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
 				feature.index = -1;
 				feature.value = -1;
+			}
+
+			if (PyErr_CheckSignals() != 0) {
+				return;		
 			}
 
 			struct liblinear::problem* problem = new struct liblinear::problem;
@@ -161,7 +160,7 @@ namespace lbf {
 
 			struct liblinear::parameter* parameter = new struct liblinear::parameter;
 			parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
-			parameter->C = 1.0 / _num_augmented_data;
+			parameter->C = 1.0;
 			parameter->p = 0;
 
 		    double** targets = new double*[_model->_num_landmarks];
@@ -170,7 +169,9 @@ namespace lbf {
 			}
 
 			// train regressor
+			// #pragma omp parallel for
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+				cout << "." << flush;
 
 				// train x
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
@@ -201,6 +202,8 @@ namespace lbf {
 		        _model->set_linear_models(model_x, model_y, stage, landmark_index);
 			}
 
+			cout << endl;
+
 			// predict shape
 			double average_error = 0;
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
@@ -227,6 +230,15 @@ namespace lbf {
 			}
 			average_error /= _model->_num_landmarks * _num_augmented_data;
 			cout << "Error: " << average_error << endl;
+
+			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+				delete[] targets[landmark_index];
+			}
+			delete[] targets;
+			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+				delete[] binary_features[augmented_data_index];
+			}
+			delete[] binary_features;
 		}
 		cv::Mat1b & Trainer::get_image_by_augmented_index(int augmented_data_index){
 			assert(augmented_data_index < _augmented_indices_to_data_index.size());

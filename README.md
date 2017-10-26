@@ -12,8 +12,9 @@
 
 - Python 3
 - OpenCV 3
-- Boost 1.65
+- Boost 1.64+
 - Dlib
+- OpenMP
 
 ## Installation
 

@@ -162,7 +162,7 @@ def preprocess_images(directory):
 def build_corpus():
 	image_list_train = []
 	shape_list_train = []
-	targets = ["01_Indoor", "02_Outdoor"]
+	# targets = ["01_Indoor", "02_Outdoor"]
 	targets = ["00_Test"]
 
 	mean_shape = []
@@ -261,8 +261,9 @@ def main():
 		# debug
 		if args.debug_directory is not None:
 			for data_index in range(training_corpus.get_num_images()):
+				augmented_data_index = data_index + training_corpus.get_num_images() * 2
 				image = training_corpus.get_image(data_index)
-				estimated_shape = trainer.estimate_shape_with_only_local_binary_features(stage, data_index, transform=True)
+				estimated_shape = trainer.estimate_shape_with_only_local_binary_features(stage, augmented_data_index, transform=True)
 				image_height = image.shape[0]
 				image_width = image.shape[1]
 				for (x, y) in estimated_shape:
@@ -275,7 +276,7 @@ def main():
 				cv2.imwrite(os.path.join(args.debug_directory, "{}_stage{}.local.jpg".format(data_index, stage)), image)
 				
 				image = training_corpus.get_image(data_index)
-				estimated_shape = trainer.get_current_estimated_shape(data_index, transform=True)
+				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
 				image_height = image.shape[0]
 				image_width = image.shape[1]
 				for (x, y) in estimated_shape:

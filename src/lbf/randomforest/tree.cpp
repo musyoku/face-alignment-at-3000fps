@@ -25,20 +25,14 @@ namespace lbf {
 		{
 			assert(data_indices.size() > 0);
 			if(node->_depth > _max_depth){
-				node->_is_leaf = true;
-				node->_leaf_identifier = _autoincrement_leaf_index;
-				node->_assigned_data_indices = data_indices;
-				node->_update_delta_shape(regression_targets);
+				node->mark_as_leaf(_autoincrement_leaf_index, data_indices, regression_targets);
 				_autoincrement_leaf_index++;
 				_num_leaves++;
 				return;
 			}
 			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, regression_targets);
 			if(need_to_split == false){
-				node->_is_leaf = true;
-				node->_leaf_identifier = _autoincrement_leaf_index;
-				node->_assigned_data_indices = data_indices;
-				node->_update_delta_shape(regression_targets);
+				node->mark_as_leaf(_autoincrement_leaf_index, data_indices, regression_targets);
 				_autoincrement_leaf_index++;
 				_num_leaves++;
 				return;
