@@ -1,6 +1,8 @@
 #include <boost/python/numpy.hpp>
 #include <opencv/opencv.hpp>
+#include <fstream>
 #include <vector>
+#include <string>
 #include <set>
 #include "../../src/lbf/sampler.h"
 #include "../../src/python/corpus.h"
@@ -16,121 +18,113 @@ using std::endl;
 namespace p = boost::python;
 namespace np = boost::python::numpy;
 
-void load_training_data(std::vector<cv::Mat1b> &images,
-						std::vector<cv::Mat1d> &shapes)
-{
-	std::string fn_haar = "./../haarcascade_frontalface_alt2.xml";
-	cv::CascadeClassifier haar_cascade;
-	bool yes = haar_cascade.load(fn_haar);
-	std::cout << "face detector loaded : " << yes << std::endl;
-	std::cout << "loading images..." << std::endl;
-
-	int count = 0;
-	for (int i = 0; i < image_path_prefix.size(); i++) {
-		int c = 0;
-		std::ifstream fin;
-		fin.open((image_lists[i]).c_str(), std::ifstream::in);
-		std::string path_prefix = image_path_prefix[i];
-		std::string image_file_name, image_pts_name;
-		std::cout << "loading images in folder: " << path_prefix << std::endl;
-		while (fin >> image_file_name >> image_pts_name){
-			std::string image_path, pts_path;
-			if (path_prefix[path_prefix.size()-1] == '/') {
-				image_path = path_prefix + image_file_name;
-				pts_path = path_prefix + image_pts_name;
-			}
-			else{
-				image_path = path_prefix + "/" + image_file_name;
-				pts_path = path_prefix + "/" + image_pts_name;
-			}
-			cv::Mat_<uchar> image = cv::imread(image_path.c_str(), 0);
-			// std::cout << "image size: " << image.size() << std::endl;
-			cv::Mat_<double> ground_truth_shape = LoadGroundTruthShape(pts_path.c_str());
-
-			if (image.cols > 2000){
-				cv::resize(image, image, cv::Size(image.cols / 4, image.rows / 4), 0, 0, cv::INTER_LINEAR);
-				ground_truth_shape /= 4.0;
-			}
-			else if (image.cols > 1400 && image.cols <= 2000){
-				cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
-				ground_truth_shape /= 3.0;
-			}
-
-			std::vector<cv::Rect> faces;
-			haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(30, 30));
-
-			 for (int i = 0; i < faces.size(); i++){
-				cv::Rect faceRec = faces[i];
-				if (ShapeInRect(ground_truth_shape, faceRec)){
-					images.push_back(image);
-					ground_truth_shapes.push_back(ground_truth_shape);
-					BoundingBox bbox;
-
-					bbox.start_x = faceRec.x;
-					bbox.start_y = faceRec.y;
-					bbox.width = faceRec.width;
-					bbox.height = faceRec.height;
-					bbox.center_x = bbox.start_x + bbox.width / 2.0;
-					bbox.center_y = bbox.start_y + bbox.height / 2.0;
-					bboxes.push_back(bbox);
-					count++;
-					c++;
-					if (count%100 == 0){
-						std::cout << count << " images loaded\n";
-					}
-					break;
-				}
-			 }
-		}
-		std::cout << "get " << c << " faces in " << path_prefix << std::endl;
-		fin.close();
+bool read_shape(std::string filename, cv::Mat1d &shape){
+	double* array = new double[68 * 2];
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+	if(ifs.is_open() == false){
+		cout << "Error reading " << filename << endl;
+		exit(0);
 	}
+    ifs.seekg(0, std::ios::beg);
+	ifs.read(reinterpret_cast<char*>(array), 68 * 2 * sizeof(double));
+	for(int h = 0;h < 68;h++){
+		shape(h, 0) = array[h * 2 + 0];
+		shape(h, 1) = array[h * 2 + 1];
+	}
+	ifs.close();
+	delete[] array;
+}
 
-	std::cout << "get " << bboxes.size() << " faces in total" << std::endl;
+bool read_rotation(std::string filename, cv::Mat1d &rotation){
+	double* array = new double[68 * 2];
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+	if(ifs.is_open() == false){
+		cout << "Error reading " << filename << endl;
+		exit(0);
+	}
+    ifs.seekg(0, std::ios::beg);
+	ifs.read(reinterpret_cast<char*>(array), 4 * sizeof(double));
+	rotation(0, 0) = array[0];
+	rotation(0, 1) = array[1];
+	rotation(1, 0) = array[2];
+	rotation(1, 1) = array[3];
+	ifs.close();
+	delete[] array;
+}
 
+bool read_shift(std::string filename, cv::Point2d &shift){
+	double* array = new double[68 * 2];
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+	if(ifs.is_open() == false){
+		cout << "Error reading " << filename << endl;
+		exit(0);
+	}
+    ifs.seekg(0, std::ios::beg);
+	ifs.read(reinterpret_cast<char*>(array), 4 * sizeof(double));
+	shift.x = array[0];
+	shift.y = array[1];
+	cout << shift << endl;
+	ifs.close();
+	delete[] array;
 }
 
 int main(){
 	Py_Initialize();
 	np::initialize();
+
+	std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp/";
 	Corpus* training_corpus = new Corpus();
 	Corpus* validation_corpus = new Corpus();
-	cv::Mat1b image(100, 100);
-	cv::Mat1d shape(68, 2);
-	int num_data = 10;
-	for(int data_index = 0;data_index < num_data;data_index++){
-		for(int h = 0;h < 100;h++){
-			for(int w = 0;w < 100;w++){
-				image(h, w) = sampler::uniform_int(0, 255);
-			}
+	cv::Mat1d mean_shape(68, 2);
+	for(int h = 0;h < 68;h++){
+		mean_shape(h, 0) = 0;
+		mean_shape(h, 1) = 0;
+	}
+
+	for(int data_index = 0;data_index < 135;data_index++){
+		std::string image_filename = directory + std::to_string(data_index) + ".jpg";
+		std::string rotation_filename = directory + std::to_string(data_index) + ".rotation";
+		std::string rotation_inv_filename = directory + std::to_string(data_index) + ".rotation_inv";
+		std::string shift_filename = directory + std::to_string(data_index) + ".shift";
+		std::string shift_inv_filename = directory + std::to_string(data_index) + ".shift_inv";
+
+		cv::Mat1b image = cv::imread(image_filename.c_str(), 0);
+		if(image.data == NULL){
+			continue;
 		}
-		for(int landmark_index = 0;landmark_index < 68;landmark_index++){
-			shape(landmark_index, 0) = sampler::uniform(-1, 1);
-			shape(landmark_index, 1) = sampler::uniform(-1, 1);
-		}
+		cv::Mat1d shape(68, 2);
+		cv::Mat1d normalized_shape(68, 2);
+		cv::Mat1d rotation(2, 2);
+		cv::Mat1d rotation_inv(2, 2);
+		cv::Point2d shift;
+		cv::Point2d shift_inv;
+		
+		read_shape(directory + std::to_string(data_index) + ".shape", shape);
+		read_shape(directory + std::to_string(data_index) + ".nshape", normalized_shape);
+		read_rotation(directory + std::to_string(data_index) + ".rotation", rotation);
+		read_rotation(directory + std::to_string(data_index) + ".rotation_inv", rotation_inv);
+		read_shift(directory + std::to_string(data_index) + ".shift", shift);
+		read_shift(directory + std::to_string(data_index) + ".shift_inv", shift_inv);
+
 		training_corpus->_images.push_back(image);
 		training_corpus->_shapes.push_back(shape);
 		training_corpus->_normalized_shapes.push_back(shape);
-		cv::Mat1d rotation(2, 2);
-		rotation(0, 0) = 1;
-		rotation(0, 1) = 0;
-		rotation(1, 0) = 0;
-		rotation(1, 1) = 1;
 		training_corpus->_rotation.push_back(rotation);
-		training_corpus->_rotation_inv.push_back(rotation);
-		cv::Point2d shift;
-		shift.x = 1;
-		shift.y = 1;
+		training_corpus->_rotation_inv.push_back(rotation_inv);
 		training_corpus->_shift.push_back(shift);
-		training_corpus->_shift_inv.push_back(shift);
+		training_corpus->_shift_inv.push_back(shift_inv);
+
+		mean_shape += shape;
 	}
-	double* mean_shape = new double[68 * 2];
-	for(int landmark_index = 0;landmark_index < 68;landmark_index++){
-		mean_shape[landmark_index * 2 + 0] = sampler::uniform(-1, 1);
-		mean_shape[landmark_index * 2 + 1] = sampler::uniform(-1, 1);
+	mean_shape /= training_corpus->get_num_images();
+
+	boost::python::tuple size = boost::python::make_tuple(mean_shape.rows, mean_shape.cols);
+	np::ndarray mean_shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+	for(int h = 0;h < mean_shape.rows;h++) {
+		for(int w = 0;w < mean_shape.cols;w++) {
+			mean_shape_ndarray[h][w] = mean_shape(h, w);
+		}
 	}
-	auto stride = p::make_tuple(sizeof(double) * 2, sizeof(double));
-	np::ndarray mean_shape_ndarray = np::from_data(mean_shape, np::dtype::get_builtin<double>(), p::make_tuple(68, 2), stride, p::object());
 
 	int augmentation_size = 5;
 	int num_stages = 6;
@@ -140,12 +134,11 @@ int main(){
 	int num_features_to_sample = 500;
 	std::vector<double> feature_radius{0.29, 0.21, 0.16, 0.12, 0.08, 0.04};
 
-	Dataset* dataset = new Dataset(training_corpus, validation_corpus, mean_shape_ndarray, augmentation_size);
-	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, feature_radius);
+	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
+	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
 	trainer->train();
 
-	delete[] mean_shape;
 	delete training_corpus;
 	delete dataset;
 	delete model;

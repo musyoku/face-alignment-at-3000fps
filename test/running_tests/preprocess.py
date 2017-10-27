@@ -163,7 +163,7 @@ def build_corpus():
 	image_list_train = []
 	shape_list_train = []
 	targets = ["01_Indoor", "02_Outdoor"]
-	targets = ["00_Test"]
+	# targets = ["00_Test"]
 
 	mean_shape = []
 	for _ in range(68):
