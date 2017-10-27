@@ -29,10 +29,11 @@ namespace lbf {
 			void train();
 			void train_stage(int stage);
 			void train_local_binary_features_at_stage(int stage);
+			void evaluate_stage(int stage);
 			cv::Mat1d project_current_estimated_shape(int augmented_data_index);
 			boost::python::numpy::ndarray python_get_current_estimated_shape(int augmented_data_index, bool transform);
 			boost::python::numpy::ndarray python_get_target_shape(int augmented_data_index, bool transform);
-			boost::python::numpy::ndarray python_estimate_shape_with_only_local_binary_features(int stage, int augmented_data_index, bool transform);
+			boost::python::numpy::ndarray python_estimate_shape_only_using_local_binary_features(int stage, int augmented_data_index, bool transform);
 		};
 	}
 }

@@ -392,7 +392,7 @@ namespace lbf {
 			}
 			return shape_ndarray;
 		}
-		np::ndarray Trainer::python_estimate_shape_with_only_local_binary_features(int stage, int augmented_data_index, bool transform){
+		np::ndarray Trainer::python_estimate_shape_only_using_local_binary_features(int stage, int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());
 			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index].clone();
 
@@ -451,6 +451,85 @@ namespace lbf {
 				}
 			}
 			return shape_ndarray;
+		}
+		void Trainer::evaluate_stage(int num_stages){
+			int num_data = _dataset->_validation_corpus->get_num_images();
+			for(int data_index = 0;data_index < num_data;data_index++){
+
+				cv::Mat1b &image = _dataset->_validation_corpus->get_image(data_index);
+				cv::Mat1d estimated_shape = _model->_mean_shape.clone();
+
+				for(int stage = 0;stage < num_stages;stage++){
+
+					int num_total_trees = 0;
+					int num_total_leaves = 0;
+
+					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+						Forest* forest = _model->get_forest(stage, landmark_index);
+						num_total_trees += forest->get_num_trees();
+						num_total_leaves += forest->get_num_total_leaves();
+					}
+
+					//// compute binary features
+					struct liblinear::feature_node* binary_features = new liblinear::feature_node[num_total_trees + 1];
+					int feature_offset = 1;		// start with 1
+					int feature_pointer = 0;
+
+					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+						// find leaves
+						Forest* forest = _model->get_forest(stage, landmark_index);
+						std::vector<Node*> leaves;
+						forest->predict(estimated_shape, image, leaves);
+						assert(leaves.size() == forest->get_num_trees());
+						// delta_shape
+						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
+							Tree* tree = forest->get_tree_at(tree_index);
+							int num_leaves = tree->get_num_leaves();
+							Node* leaf = leaves[tree_index];
+							assert(feature_pointer < num_total_trees + 1);
+							liblinear::feature_node &feature = binary_features[feature_pointer];
+							feature.index = feature_offset + leaf->identifier();
+							feature.value = 1.0;	// binary feature
+							feature_pointer++;
+							feature_offset += tree->get_num_leaves();
+						}
+					}
+					liblinear::feature_node &feature = binary_features[feature_pointer];
+					feature.index = -1;
+					feature.value = -1;
+
+					cv::Mat1d &target_shape = _dataset->_validation_corpus->_shapes[data_index];
+					double average_error = 0;
+
+					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+
+						struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
+						struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
+
+						if(model_x == NULL){
+							continue;
+						}
+						if(model_y == NULL){
+							continue;
+						}
+
+						double delta_x = liblinear::predict(model_x, binary_features);
+						double delta_y = liblinear::predict(model_y, binary_features);
+
+						// update shape
+						estimated_shape(landmark_index, 0) += delta_x;
+						estimated_shape(landmark_index, 1) += delta_y;
+
+						// compute error
+						double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
+						double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
+						double error = std::sqrt(error_x * error_x + error_y * error_y);
+						average_error += error;
+					}
+
+					cout << "validation error (stage " << stage << " of " << num_stages << "): " << average_error << endl;
+				}
+			}
 		}
 	}
 }

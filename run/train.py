@@ -235,7 +235,7 @@ def main():
 	training_corpus, mean_shape = build_corpus(training_targets)
 	validation_corpus, _ = build_corpus(validation_targets)
 	print("#images (train):", training_corpus.get_num_images())
-	print("#images (dev):", validation_corpus.get_num_images())
+	print("#images (val):", validation_corpus.get_num_images())
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -282,8 +282,9 @@ def main():
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
-		# trainer.train_local_binary_features_at_stage(stage)
+		# trainer.estimate_shape_only_using_local_binary_features(stage)
 		model.save(args.model_filename)
+		trainer.evaluate_stage(stage)
 
 		# debug
 		if args.debug_directory is not None:
