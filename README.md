@@ -35,6 +35,15 @@ Boost
 
 `brew install boost-python --with-python3`
 
+OpenCV 3
+
+```
+brew tap homebrew/science
+brew install opencv3 --with-python3　--without-python
+```
+
+Open `/usr/local/Cellar/opencv/3.*.*/lib/pkgconfig/opencv.pc` and replace `-llibopencv_xxxxxx.3.3.1.dylib` with `-lopencv_xxxxxx`.
+
 ### Ubuntu
 
 Boost
