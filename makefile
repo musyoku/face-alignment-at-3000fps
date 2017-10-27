@@ -2,13 +2,13 @@ CC = g++
 BOOST = /home/stark/boost
 INCLUDE = `python3-config --includes` `pkg-config --cflags opencv` -std=c++11 -I$(BOOST)/include
 LDFLAGS = `python3-config --ldflags` `pkg-config --libs opencv` -lboost_serialization -lboost_numpy3 -lboost_python3 -L$(BOOST)/lib
-SOFLAGS = -shared -fPIC -march=native -O3 -fopenmp
+SOFLAGS = -shared -fPIC -march=native -O3
 
 install: ## Python用ライブラリをコンパイル
 	$(CC) -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 
 install_ubuntu: ## Python用ライブラリをコンパイル
-	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
+	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -fopenmp -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 
 check_includes:	## Python.hの場所を確認
 	python3-config --includes
