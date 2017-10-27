@@ -1,5 +1,7 @@
 #include <boost/python.hpp>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <cmath>
 #include <iostream>
 #include "../lbf/liblinear/linear.h"
