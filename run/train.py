@@ -231,7 +231,9 @@ def main():
 
 	# build corpus
 	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
+	training_targets = ["afw"]
 	validation_targets = ["helen/testset", "lfpw/testset"]
+	validation_targets = ["ibug"]
 	training_corpus, mean_shape = build_corpus(training_targets)
 	validation_corpus, _ = build_corpus(validation_targets)
 	print("#images (train):", training_corpus.get_num_images())

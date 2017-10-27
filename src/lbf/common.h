@@ -1,5 +1,5 @@
 #pragma once
-#include <opencv/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace lbf {
 	class FeatureLocation {

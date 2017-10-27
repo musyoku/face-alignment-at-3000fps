@@ -1,5 +1,5 @@
 #pragma once
-#include <opencv/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include "corpus.h"
 
 namespace lbf {

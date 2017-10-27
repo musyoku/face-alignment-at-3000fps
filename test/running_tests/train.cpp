@@ -1,5 +1,5 @@
 #include <boost/python/numpy.hpp>
-#include <opencv/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <fstream>
 #include <vector>
 #include <string>

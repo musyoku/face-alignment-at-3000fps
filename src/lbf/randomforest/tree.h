@@ -1,6 +1,6 @@
 #pragma once
 #include <boost/serialization/serialization.hpp>
-#include <opencv/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <vector>
 #include <set>
 #include "node.h"

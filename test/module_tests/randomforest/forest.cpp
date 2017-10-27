@@ -1,4 +1,4 @@
-#include <opencv/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <vector>
 #include <set>
 #include "../../../src/lbf/randomforest/forest.h"
