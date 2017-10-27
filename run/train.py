@@ -159,17 +159,15 @@ def preprocess_images(directory):
 
 	return dataset_images, dataset_landmarks
 
-def build_corpus():
+def build_corpus(targets):
 	image_list_train = []
 	shape_list_train = []
-	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
-	test_targets = ["helen/testset", "lfpw/testset"]
 
 	mean_shape = []
 	for _ in range(68):
 		mean_shape.append([0, 0])
 
-	for target in training_targets:
+	for target in targets:
 		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
 		image_list_train += images
 		shape_list_train += shape
@@ -185,8 +183,7 @@ def build_corpus():
 		mean_shape[feature_index][1] /= len(shape_list_train)
 
 	mean_shape = np.asarray(mean_shape, dtype=np.float64)
-	training_corpus = lbf.corpus()
-	validation_corpus = lbf.corpus()
+	corpus = lbf.corpus()
 
 	for image, shape in zip(image_list_train, shape_list_train):
 		shape = np.asarray(shape, dtype=np.float64)
@@ -207,9 +204,9 @@ def build_corpus():
 		rotation_inv = mat[:, :2]
 		shift_inv = mat[:, 2]
 
-		training_corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv)
+		corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv)
 
-	return training_corpus, validation_corpus, mean_shape
+	return corpus, mean_shape
 
 def imwrite(image, shape, filename):
 	image_height = image.shape[0]
@@ -233,9 +230,12 @@ def main():
 		pass
 
 	# build corpus
-	training_corpus, validation_corpus, mean_shape = build_corpus()
+	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
+	validation_targets = ["helen/testset", "lfpw/testset"]
+	training_corpus, mean_shape = build_corpus(training_targets)
+	validation_corpus, _ = build_corpus(validation_targets)
 	print("#images (train):", training_corpus.get_num_images())
-	print("#images (valid):", validation_corpus.get_num_images())
+	print("#images (dev):", validation_corpus.get_num_images())
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
