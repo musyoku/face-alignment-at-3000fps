@@ -128,7 +128,7 @@ namespace lbf {
 				const std::vector<lbf::liblinear::model*> &linear_models = linear_models_at_stage[stage];
 				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
 					lbf::liblinear::model const* model = linear_models[landmark_index];
-					bool skip_flag = false ? model == NULL : true;
+					bool skip_flag = true ? model == NULL : false;
 					ar & skip_flag;
 					if(skip_flag){
 						continue;
@@ -293,60 +293,6 @@ namespace lbf {
 				feature.index = -1;
 				feature.value = -1;
 
-
-				// struct liblinear::problem* problem = new struct liblinear::problem;
-				// problem->l = _num_augmented_data;
-				// problem->n = num_total_leaves;
-				// problem->x = binary_features;
-				// problem->bias = -1;
-
-				// struct liblinear::parameter* parameter = new struct liblinear::parameter;
-				// parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
-				// parameter->C = 1.0;
-				// parameter->p = 0;
-
-			 //    double** targets = new double*[_num_landmarks];
-				// for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
-				// 	targets[landmark_index] = new double[_num_augmented_data];
-				// }
-
-				// // train regressor
-				// #pragma omp parallel for
-				// for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
-				// 	cout << "." << flush;
-
-				// 	// train x
-				// 	for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				// 		cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-				// 		cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
-
-				// 		double delta_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
-
-				// 		targets[landmark_index][augmented_data_index] = delta_x;
-				// 	}
-				// 	problem->y = targets[landmark_index];
-				// 	liblinear::check_parameter(problem, parameter);
-			 //        struct liblinear::model* model_x = liblinear::train(problem, parameter);
-
-				// 	// train y
-				// 	for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				// 		cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-				// 		cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
-
-				// 		double delta_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-
-				// 		targets[landmark_index][augmented_data_index] = delta_y;
-				// 	}
-				// 	problem->y = targets[landmark_index];
-				// 	liblinear::check_parameter(problem, parameter);
-			 //        struct liblinear::model* model_y = liblinear::train(problem, parameter);
-
-			 //        set_linear_models(model_x, model_y, stage, landmark_index);
-				// }
-
-				// cout << endl;
-
-				// predict shape
 				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
 
 					struct liblinear::model* model_x = get_linear_model_x_at(stage, landmark_index);
@@ -361,6 +307,7 @@ namespace lbf {
 
 					double delta_x = liblinear::predict(model_x, binary_features);
 					double delta_y = liblinear::predict(model_y, binary_features);
+
 
 					// update shape
 					estimated_shape(landmark_index, 0) += delta_x;

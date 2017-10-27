@@ -102,7 +102,6 @@ namespace lbf {
 		}
 		template <class Archive>
 		void Tree::serialize(Archive &ar, unsigned int version){
-			ar & _autoincrement_leaf_index;
 			ar & _num_leaves;
 			ar & _landmark_index;
 			ar & _root;

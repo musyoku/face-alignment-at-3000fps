@@ -17,10 +17,21 @@ def main():
 		rects = detector(gray, 0)
 
 		for rect in rects:
-			face = frame[rect.top():rect.bottom(), rect.left():rect.right()]
+			face = gray[rect.top():rect.bottom(), rect.left():rect.right()]
+			print(face.shape)
+			face_rgb = frame[rect.top():rect.bottom(), rect.left():rect.right()]
+			face_height, face_width = face.shape
+			face_width /= 2
+			face_height /= 2
 			shape = model.estimate_shape(face)
+			white = (255, 255, 255)
+			for (x, y) in shape:
+				x = int(face_width + x * face_width)
+				y = int(face_height + y * face_height)
+				cv2.line(face_rgb, (x - 4, y), (x + 4, y), white, 1)
+				cv2.line(face_rgb, (x, y - 4), (x, y + 4), white, 1)
 			# cv2.rectangle(frame, (rect.left(), rect.top()), (rect.right(), rect.bottom()), (255, 255, 255), 1)
-			cv2.imshow("face", face)
+			cv2.imshow("face", face_rgb)
 		  
 		cv2.imshow("frame", frame)
 		key = cv2.waitKey(1) & 0xFF
