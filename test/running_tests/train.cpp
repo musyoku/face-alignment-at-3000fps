@@ -63,7 +63,6 @@ bool read_shift(std::string filename, cv::Point2d &shift){
 	ifs.read(reinterpret_cast<char*>(array), 4 * sizeof(double));
 	shift.x = array[0];
 	shift.y = array[1];
-	cout << shift << endl;
 	ifs.close();
 	delete[] array;
 }
@@ -126,7 +125,7 @@ int main(){
 		}
 	}
 
-	int augmentation_size = 5;
+	int augmentation_size = 20;
 	int num_stages = 6;
 	int num_trees_per_forest = 5;
 	int tree_depth = 7;

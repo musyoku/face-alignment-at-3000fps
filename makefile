@@ -5,12 +5,10 @@ LDFLAGS = `python3-config --ldflags` `pkg-config --libs opencv` -lboost_serializ
 SOFLAGS = -shared -fPIC -march=native -O3 -fopenmp
 
 install: ## Python用ライブラリをコンパイル
-	$(CC) $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/python/*.cpp $(LDFLAGS)
+	$(CC) -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 
 install_ubuntu: ## Python用ライブラリをコンパイル
 	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
-	cp run/lbf.so run/300w/lbf.so
-	rm -rf run/lbf.so
 
 check_includes:	## Python.hの場所を確認
 	python3-config --includes
