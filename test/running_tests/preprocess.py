@@ -162,14 +162,14 @@ def preprocess_images(directory):
 def build_corpus():
 	image_list_train = []
 	shape_list_train = []
-	targets = ["01_Indoor", "02_Outdoor"]
-	# targets = ["00_Test"]
+	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
+	validation_targets = ["helen/testset", "lfpw/testset"]
 
 	mean_shape = []
 	for _ in range(68):
 		mean_shape.append([0, 0])
 
-	for target in targets:
+	for target in training_targets:
 		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
 		image_list_train += images
 		shape_list_train += shape

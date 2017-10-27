@@ -133,6 +133,8 @@ int main(){
 	int num_features_to_sample = 500;
 	std::vector<double> feature_radius{0.29, 0.21, 0.16, 0.12, 0.08, 0.04};
 
+	cout << "#images " << training_corpus->get_num_images() << endl;
+
 	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
