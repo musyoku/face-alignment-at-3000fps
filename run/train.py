@@ -308,6 +308,7 @@ def main():
 				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
 
 				# validation
+				image = validation_corpus.get_image(data_index)
 				estimated_shape = trainer.get_validation_estimated_shape(data_index, transform=True)
 				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "validation_{}_stage_{}.jpg".format(data_index, stage)))
 

@@ -328,10 +328,10 @@ namespace lbf {
 			int data_index = _augmented_indices_to_data_index[augmented_data_index];
 
 			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-			cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+			cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 			cv::Mat1d shift_inv(2, 1);
-			shift_inv(0, 0) = _shift_inv.x;
-			shift_inv(1, 0) = _shift_inv.y;
+			shift_inv(0, 0) = shift_inv_point.x;
+			shift_inv(1, 0) = shift_inv_point.y;
 
 			// inverse
 			cv::Mat1d shape_T(shape.cols, shape.rows);
@@ -354,10 +354,10 @@ namespace lbf {
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
 
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+				cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 				cv::Mat1d shift_inv(2, 1);
-				shift_inv(0, 0) = _shift_inv.x;
-				shift_inv(1, 0) = _shift_inv.y;
+				shift_inv(0, 0) = shift_inv_point.x;
+				shift_inv(1, 0) = shift_inv_point.y;
 
 				// inverse
 				cv::Mat1d shape_T(shape.cols, shape.rows);
@@ -431,10 +431,10 @@ namespace lbf {
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
 
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+				cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 				cv::Mat1d shift_inv(2, 1);
-				shift_inv(0, 0) = _shift_inv.x;
-				shift_inv(1, 0) = _shift_inv.y;
+				shift_inv(0, 0) = shift_inv_point.x;
+				shift_inv(1, 0) = shift_inv_point.y;
 
 				// inverse
 				cv::Mat1d shape_T(shape.cols, shape.rows);
@@ -464,12 +464,10 @@ namespace lbf {
 			cv::Mat1d estimated_shape = _model->_mean_shape.clone();
 
 			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-			cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
-			cv::Mat1d &rotation = corpus->get_rotation_inv(data_index);
-			cv::Point2d &_shift = corpus->get_shift_inv(data_index);
+			cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 			cv::Mat1d shift_inv(2, 1);
-			shift_inv(0, 0) = _shift_inv.x;
-			shift_inv(1, 0) = _shift_inv.y;
+			shift_inv(0, 0) = shift_inv_point.x;
+			shift_inv(1, 0) = shift_inv_point.y;
 
 			for(int stage = 0;stage < _model->_num_stages;stage++){
 				if(_model->_training_finished_at_stage[stage] == false){
@@ -542,26 +540,6 @@ namespace lbf {
 				delete[] binary_features;
 			}
 
-
-
-
-
-
-
-
-
-
-
-
-
-			estimated_shape = _model->_mean_shape.clone();
-
-
-
-
-
-
-
 			if(transform){
 				cv::Mat1d shape_T(estimated_shape.cols, estimated_shape.rows);
 				cv::transpose(estimated_shape, shape_T);
@@ -598,12 +576,10 @@ namespace lbf {
 					// unnormalize initial shape
 					Corpus* corpus = _dataset->_validation_corpus;
 					cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-					cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
-					cv::Mat1d &rotation = corpus->get_rotation_inv(data_index);
-					cv::Point2d &_shift = corpus->get_shift_inv(data_index);
+					cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 					cv::Mat1d shift_inv(2, 1);
-					shift_inv(0, 0) = _shift_inv.x;
-					shift_inv(1, 0) = _shift_inv.y;
+					shift_inv(0, 0) = shift_inv_point.x;
+					shift_inv(1, 0) = shift_inv_point.y;
 					//// inverse
 					cv::Mat1d shape_T(unnormalized_estimated_shape.cols, unnormalized_estimated_shape.rows);
 					cv::transpose(unnormalized_estimated_shape, shape_T);
