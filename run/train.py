@@ -159,9 +159,9 @@ def preprocess_images(directory):
 
 	return dataset_images, dataset_landmarks
 
-def build_corpus(targets):
-	image_list_train = []
-	shape_list_train = []
+def read_images_and_shapes(targets):
+	image_list = []
+	shape_list = []
 
 	mean_shape = []
 	for _ in range(68):
@@ -169,23 +169,30 @@ def build_corpus(targets):
 
 	for target in targets:
 		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
-		image_list_train += images
-		shape_list_train += shape
+		image_list += images
+		shape_list += shape
 
 	# calculate mean shape
-	for shape in shape_list_train:
+	for shape in shape_list:
 		for feature_index, (x, y) in enumerate(shape):
 			mean_shape[feature_index][0] += x
 			mean_shape[feature_index][1] += y
 		
 	for feature_index in range(len(mean_shape)):
-		mean_shape[feature_index][0] /= len(shape_list_train)
-		mean_shape[feature_index][1] /= len(shape_list_train)
+		mean_shape[feature_index][0] /= len(shape_list)
+		mean_shape[feature_index][1] /= len(shape_list)
 
 	mean_shape = np.asarray(mean_shape, dtype=np.float64)
-	corpus = lbf.corpus()
 
-	for image, shape in zip(image_list_train, shape_list_train):
+	return image_list, shape_list, mean_shape
+
+def build_corpus(targets, mean_shape=None):
+	corpus = lbf.corpus()
+	image_list, shape_list, _mean_shape = read_images_and_shapes(targets)
+	if mean_shape is None:
+		mean_shape = _mean_shape
+
+	for image, shape in zip(image_list, shape_list):
 		shape = np.asarray(shape, dtype=np.float64)
 
 		# normalize shape
@@ -208,18 +215,19 @@ def build_corpus(targets):
 
 	return corpus, mean_shape
 
-def imwrite(image, shape, filename):
-	image_height = image.shape[0]
-	image_width = image.shape[1]
-	white = (255, 255, 255)
+def imwrite(image_gray, shape, filename):
+	image_height = image_gray.shape[0]
+	image_width = image_gray.shape[1]
+	image_bgr = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
+	color = (0, 255, 255)
 	for (x, y) in shape:
 		x = int(image_width / 2 + x * image_width / 2)
 		y = int(image_height / 2 + y * image_height / 2)
 		
-		cv2.line(image, (x - 4, y), (x + 4, y), white, 1)
-		cv2.line(image, (x, y - 4), (x, y + 4), white, 1)
+		cv2.line(image_bgr, (x - 4, y), (x + 4, y), color, 1)
+		cv2.line(image_bgr, (x, y - 4), (x, y + 4), color, 1)
 
-	cv2.imwrite(os.path.join(args.debug_directory, filename), image)
+	cv2.imwrite(os.path.join(args.debug_directory, filename), image_bgr)
 
 def main():
 	assert args.dataset_directory is not None
@@ -235,7 +243,7 @@ def main():
 	validation_targets = ["helen/testset", "lfpw/testset"]
 	validation_targets = ["ibug"]
 	training_corpus, mean_shape = build_corpus(training_targets)
-	validation_corpus, _ = build_corpus(validation_targets)
+	validation_corpus, _ = build_corpus(validation_targets, mean_shape=mean_shape)
 	print("#images (train):", training_corpus.get_num_images())
 	print("#images (val):", validation_corpus.get_num_images())
 
@@ -276,15 +284,11 @@ def main():
 			augmented_data_index = data_index
 			image = training_corpus.get_image(data_index)
 
-			target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
-			imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_original_target_stage_{}.jpg".format(data_index, 0)))
-
 			estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
 			imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_initial_shape_stage_{}.jpg".format(data_index, 0)))
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
-		# trainer.estimate_shape_only_using_local_binary_features(stage)
 		model.save(args.model_filename)
 		trainer.evaluate_stage(stage)
 
@@ -294,7 +298,7 @@ def main():
 				augmented_data_index = data_index
 				image = training_corpus.get_image(data_index)
 
-				estimated_shape = trainer.estimate_shape_with_only_local_binary_features(stage, augmented_data_index, transform=True)
+				estimated_shape = trainer.estimate_shape_only_using_local_binary_features(stage, augmented_data_index, transform=True)
 				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_local_stage_{}.jpg".format(data_index, stage)))
 				
 				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
@@ -303,6 +307,9 @@ def main():
 				target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
 				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
 
+				# validation
+				estimated_shape = trainer.get_validation_estimated_shape(data_index, transform=True)
+				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "validation_{}_stage_{}.jpg".format(data_index, stage)))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

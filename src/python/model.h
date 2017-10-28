@@ -26,6 +26,7 @@ namespace lbf {
 			int _num_landmarks;
 			int _tree_depth;
 			std::vector<double> _local_radius_at_stage;
+			std::vector<bool> _training_finished_at_stage;
 			std::vector<std::vector<randomforest::Forest*>> _forest_at_stage;
 			std::vector<std::vector<lbf::liblinear::model*>> _linear_models_x_at_stage;
 			std::vector<std::vector<lbf::liblinear::model*>> _linear_models_y_at_stage;
@@ -37,6 +38,7 @@ namespace lbf {
 			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);
+			void finish_training_at_stage(int stage);
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);
 			boost::python::numpy::ndarray python_estimate_shape(boost::python::numpy::ndarray image_ndarray);

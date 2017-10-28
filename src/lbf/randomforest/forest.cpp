@@ -17,7 +17,7 @@ namespace lbf {
 
 			_trees.reserve(num_trees);
 			for(int n = 0;n < num_trees;n++){
-				Tree* tree = new Tree(tree_depth, _landmark_index);
+				Tree* tree = new Tree(tree_depth, _landmark_index, this);
 				_trees.push_back(tree);
 			}
 		}
@@ -29,7 +29,7 @@ namespace lbf {
 			assert(pixel_differences.cols == regression_targets.size());
 			int num_data = pixel_differences.cols;
 			assert(num_data > 0);
-			for(int tree_index = 0;tree_index < _num_trees;tree_index++){
+			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
 				// bootstrap
 				std::set<int> sampled_indices;
 				for(int n = 0;n < num_data;n++){
@@ -40,6 +40,7 @@ namespace lbf {
 				// build tree
 				Tree* tree = _trees[tree_index];
 				tree->train(sampled_indices, feature_locations, pixel_differences, regression_targets);
+				assert(tree->get_num_leaves() > 0);
 				_num_total_leaves += tree->get_num_leaves();
 			}
 		}
@@ -70,7 +71,6 @@ namespace lbf {
 			ar & _stage;
 			ar & _landmark_index;
 			ar & _num_trees;
-			ar & _num_features_to_sample;
 			ar & _num_total_leaves;
 			ar & _radius;
 			ar & _trees;

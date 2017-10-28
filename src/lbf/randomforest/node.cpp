@@ -13,7 +13,8 @@ namespace lbf {
 		bool Node::split(std::set<int> &data_indices,
 						 std::vector<FeatureLocation> &sampled_feature_locations, 
 						 cv::Mat_<int> &pixel_differences, 
-						 std::vector<cv::Mat1d> &regression_targets_of_data)
+						 std::vector<cv::Mat1d> &regression_targets_of_data,
+						 std::set<int> &_selected_feature_indices_of_all_nodes)
 		{
 			assert(data_indices.size() > 0);
 			int num_features = pixel_differences.rows;
@@ -22,6 +23,9 @@ namespace lbf {
 			double selected_feature_index = -1;
 
 			for(int feature_index = 0;feature_index < num_features;feature_index++){
+				if(_selected_feature_indices_of_all_nodes.find(feature_index) != _selected_feature_indices_of_all_nodes.end()){
+					continue;
+				}
 				// select threshold
 				std::vector<int> pixel_differences_of_data;
 				pixel_differences_of_data.reserve(data_indices.size());
@@ -99,6 +103,7 @@ namespace lbf {
 			// cout << "selected_feature_index = " << selected_feature_index << endl;
 			// cout << _left_indices.size() << " : " << _right_indices.size() << endl;
 			assert(selected_feature_index != -1);
+			_selected_feature_indices_of_all_nodes.insert(selected_feature_index);
 
 			if(_left_indices.size() == 0 || _right_indices.size() == 0){
 				return false;

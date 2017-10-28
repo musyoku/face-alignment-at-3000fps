@@ -233,6 +233,8 @@ namespace lbf {
 			average_error /= _model->_num_landmarks * _num_augmented_data;
 			cout << "Error: " << average_error << endl;
 
+			_model->finish_training_at_stage(stage);
+
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 				delete[] targets[landmark_index];
 			}
@@ -335,7 +337,7 @@ namespace lbf {
 			cv::Mat1d shape_T(shape.cols, shape.rows);
 			cv::transpose(shape, shape_T);
 			shape = rotation_inv * shape_T;
-			for (int w = 0; w < shape.cols; ++w) {
+			for (int w = 0; w < shape.cols; w++) {
 				shape.col(w) += shift_inv;
 			}
 			cv::transpose(shape, shape_T);
@@ -361,7 +363,7 @@ namespace lbf {
 				cv::Mat1d shape_T(shape.cols, shape.rows);
 				cv::transpose(shape, shape_T);
 				shape = rotation_inv * shape_T;
-				for (int w = 0; w < shape.cols; ++w) {
+				for (int w = 0; w < shape.cols; w++) {
 					shape.col(w) += shift_inv;
 				}
 				cv::transpose(shape, shape_T);
@@ -438,7 +440,7 @@ namespace lbf {
 				cv::Mat1d shape_T(shape.cols, shape.rows);
 				cv::transpose(shape, shape_T);
 				shape = rotation_inv * shape_T;
-				for (int w = 0; w < shape.cols; ++w) {
+				for (int w = 0; w < shape.cols; w++) {
 					shape.col(w) += shift_inv;
 				}
 				cv::transpose(shape, shape_T);
@@ -454,14 +456,163 @@ namespace lbf {
 			}
 			return shape_ndarray;
 		}
-		void Trainer::evaluate_stage(int num_stages){
+		boost::python::numpy::ndarray Trainer::python_get_validation_estimated_shape(int data_index, bool transform){
+			Corpus* corpus = _dataset->_validation_corpus;
+			assert(data_index < corpus->get_num_images());
+
+			cv::Mat1b &image = corpus->get_image(data_index);
+			cv::Mat1d estimated_shape = _model->_mean_shape.clone();
+
+			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
+			cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+			cv::Mat1d &rotation = corpus->get_rotation_inv(data_index);
+			cv::Point2d &_shift = corpus->get_shift_inv(data_index);
+			cv::Mat1d shift_inv(2, 1);
+			shift_inv(0, 0) = _shift_inv.x;
+			shift_inv(1, 0) = _shift_inv.y;
+
+			for(int stage = 0;stage < _model->_num_stages;stage++){
+				if(_model->_training_finished_at_stage[stage] == false){
+					continue;
+				}
+
+				cv::Mat1d unnormalized_estimated_shape = estimated_shape.clone();
+
+				// unnormalize initial shape
+				cv::Mat1d shape_T(unnormalized_estimated_shape.cols, unnormalized_estimated_shape.rows);
+				cv::transpose(unnormalized_estimated_shape, shape_T);
+				unnormalized_estimated_shape = rotation_inv * shape_T;
+				for (int w = 0; w < unnormalized_estimated_shape.cols; w++) {
+					unnormalized_estimated_shape.col(w) += shift_inv;
+				}
+				cv::transpose(unnormalized_estimated_shape, shape_T);
+				unnormalized_estimated_shape = shape_T;
+
+				// predict shape
+				int num_total_trees = 0;
+				int num_total_leaves = 0;
+
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					Forest* forest = _model->get_forest(stage, landmark_index);
+					num_total_trees += forest->get_num_trees();
+					num_total_leaves += forest->get_num_total_leaves();
+				}
+
+				//// compute binary features
+				struct liblinear::feature_node* binary_features = new liblinear::feature_node[num_total_trees + 1];
+				int feature_offset = 1;		// start with 1
+				int feature_pointer = 0;
+
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					// find leaves
+					Forest* forest = _model->get_forest(stage, landmark_index);
+					std::vector<Node*> leaves;
+					forest->predict(unnormalized_estimated_shape, image, leaves);
+					assert(leaves.size() == forest->get_num_trees());
+					// delta_shape
+					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
+						Tree* tree = forest->get_tree_at(tree_index);
+						int num_leaves = tree->get_num_leaves();
+						Node* leaf = leaves[tree_index];
+						assert(feature_pointer < num_total_trees + 1);
+						liblinear::feature_node &feature = binary_features[feature_pointer];
+						feature.index = feature_offset + leaf->identifier();
+						feature.value = 1.0;	// binary feature
+						feature_pointer++;
+						feature_offset += tree->get_num_leaves();
+					}
+				}
+				liblinear::feature_node &feature = binary_features[feature_pointer];
+				feature.index = -1;
+				feature.value = -1;
+
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
+					struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
+					assert(model_x != NULL);
+					assert(model_y != NULL);
+
+					double delta_x = liblinear::predict(model_x, binary_features);
+					double delta_y = liblinear::predict(model_y, binary_features);
+
+					// update shape
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
+				}
+				delete[] binary_features;
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+			estimated_shape = _model->_mean_shape.clone();
+
+
+
+
+
+
+
+			if(transform){
+				cv::Mat1d shape_T(estimated_shape.cols, estimated_shape.rows);
+				cv::transpose(estimated_shape, shape_T);
+				estimated_shape = rotation_inv * shape_T;
+				for (int w = 0; w < estimated_shape.cols; w++) {
+					estimated_shape.col(w) += shift_inv;
+				}
+				cv::transpose(estimated_shape, shape_T);
+				estimated_shape = shape_T;
+			}
+
+			boost::python::tuple size = boost::python::make_tuple(estimated_shape.rows, estimated_shape.cols);
+			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+			for(int h = 0;h < estimated_shape.rows;h++) {
+				for(int w = 0;w < estimated_shape.cols;w++) {
+					shape_ndarray[h][w] = estimated_shape(h, w);
+				}
+			}
+			return shape_ndarray;
+		}
+		void Trainer::evaluate_stage(int target_stage){
+			cout << "validation stage: " << (target_stage + 1) << " of " << _model->_num_stages << endl;
 			int num_data = _dataset->_validation_corpus->get_num_images();
 			for(int data_index = 0;data_index < num_data;data_index++){
 
 				cv::Mat1b &image = _dataset->_validation_corpus->get_image(data_index);
 				cv::Mat1d estimated_shape = _model->_mean_shape.clone();
 
-				for(int stage = 0;stage < num_stages;stage++){
+				for(int stage = 0;stage <= target_stage;stage++){
+					assert(_model->_training_finished_at_stage[stage] == true);
+
+					cv::Mat1d unnormalized_estimated_shape = estimated_shape.clone();
+
+					// unnormalize initial shape
+					Corpus* corpus = _dataset->_validation_corpus;
+					cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
+					cv::Point2d &_shift_inv = corpus->get_shift_inv(data_index);
+					cv::Mat1d &rotation = corpus->get_rotation_inv(data_index);
+					cv::Point2d &_shift = corpus->get_shift_inv(data_index);
+					cv::Mat1d shift_inv(2, 1);
+					shift_inv(0, 0) = _shift_inv.x;
+					shift_inv(1, 0) = _shift_inv.y;
+					//// inverse
+					cv::Mat1d shape_T(unnormalized_estimated_shape.cols, unnormalized_estimated_shape.rows);
+					cv::transpose(unnormalized_estimated_shape, shape_T);
+					unnormalized_estimated_shape = rotation_inv * shape_T;
+					for (int w = 0; w < unnormalized_estimated_shape.cols; w++) {
+						unnormalized_estimated_shape.col(w) += shift_inv;
+					}
+					cv::transpose(unnormalized_estimated_shape, shape_T);
+					unnormalized_estimated_shape = shape_T;
 
 					int num_total_trees = 0;
 					int num_total_leaves = 0;
@@ -481,7 +632,7 @@ namespace lbf {
 						// find leaves
 						Forest* forest = _model->get_forest(stage, landmark_index);
 						std::vector<Node*> leaves;
-						forest->predict(estimated_shape, image, leaves);
+						forest->predict(unnormalized_estimated_shape, image, leaves);
 						assert(leaves.size() == forest->get_num_trees());
 						// delta_shape
 						for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
@@ -529,7 +680,7 @@ namespace lbf {
 						average_error += error;
 					}
 
-					cout << "validation error (stage " << stage << " of " << num_stages << "): " << average_error << endl;
+					cout << "validation error (stage " << stage << " of " << _model->_num_stages << "): " << average_error << endl;
 				}
 			}
 		}

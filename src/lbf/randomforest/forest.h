@@ -15,7 +15,6 @@ namespace lbf {
 			int _stage;
 			int _landmark_index;
 			int _num_trees;
-			int _num_features_to_sample;
 			int _num_total_leaves;
 			double _radius;
 			std::vector<Tree*> _trees;

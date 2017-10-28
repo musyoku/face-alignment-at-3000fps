@@ -65,12 +65,21 @@ namespace lbf {
 					linear_models_y[landmark_index] = NULL;
 				}
 			}
+
+			_training_finished_at_stage.resize(num_stages);
+			for(int stage = 0;stage < num_stages;stage++){
+				_training_finished_at_stage[stage] = false;
+			}
 		}
 		Model::Model(std::string filename){
 			if(python_load(filename) == false){
 				std::cout << filename << " not found." << std::endl;
 				exit(0);
 			}
+		}
+		void Model::finish_training_at_stage(int stage){
+			assert(stage < _num_stages);
+			_training_finished_at_stage[stage] = true;
 		}
 		Forest* Model::get_forest(int stage, int landmark_index){
 			assert(stage < _num_stages);
@@ -113,6 +122,7 @@ namespace lbf {
 			ar & _tree_depth;
 			ar & _local_radius_at_stage;
 			ar & _forest_at_stage;
+			ar & _training_finished_at_stage;
 			ar & _mean_shape.rows;
 			ar & _mean_shape.cols;
 			for(int h = 0;h < _mean_shape.rows;h++){
@@ -166,6 +176,7 @@ namespace lbf {
 			ar & _tree_depth;
 			ar & _local_radius_at_stage;
 			ar & _forest_at_stage;
+			ar & _training_finished_at_stage;
 
 			int rows = 0;
 			int cols = 0;
@@ -255,6 +266,9 @@ namespace lbf {
 			}
 			cv::Mat1d estimated_shape = _mean_shape.clone();
 			for(int stage = 0;stage < _num_stages;stage++){
+				if(_training_finished_at_stage[stage] == false){
+					continue;
+				}
 				int num_total_trees = 0;
 				int num_total_leaves = 0;
 				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
@@ -262,8 +276,6 @@ namespace lbf {
 					num_total_trees += forest->get_num_trees();
 					num_total_leaves += forest->get_num_total_leaves();
 				}
-				cout << "#trees = " << num_total_trees << endl;
-				cout << "#features = " << num_total_leaves << endl;
 
 				//// compute binary features
 				struct liblinear::feature_node* binary_features = new liblinear::feature_node[num_total_trees + 1];

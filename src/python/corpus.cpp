@@ -84,6 +84,19 @@ namespace lbf {
 			assert(data_index < _rotation_inv.size());
 			return _rotation_inv[data_index];
 		}
+		boost::python::numpy::ndarray Corpus::python_get_rotation_inv(int data_index){
+			assert(data_index < _images.size());
+			cv::Mat1d &rotation_inv = _rotation_inv[data_index];
+
+			boost::python::tuple size = boost::python::make_tuple(rotation_inv.rows, rotation_inv.cols);
+			np::ndarray rotation_inv_ndarray = np::zeros(size, np::dtype::get_builtin<uchar>());
+			for(int h = 0;h < rotation_inv.rows;h++) {
+				for(int w = 0;w < rotation_inv.cols;w++) {
+					rotation_inv_ndarray[h][w] = rotation_inv(h, w);
+				}
+			}
+			return rotation_inv_ndarray;
+		}
 		cv::Point2d & Corpus::get_shift(int data_index){
 			assert(data_index < _shift.size());
 			return _shift[data_index];
@@ -91,6 +104,16 @@ namespace lbf {
 		cv::Point2d & Corpus::get_shift_inv(int data_index){
 			assert(data_index < _shift_inv.size());
 			return _shift_inv[data_index];
+		}
+		boost::python::numpy::ndarray Corpus::python_get_shift_inv(int data_index){
+			assert(data_index < _images.size());
+			cv::Point2d &shift_inv = _shift_inv[data_index];
+
+			boost::python::tuple size = boost::python::make_tuple(2);
+			np::ndarray shift_inv_ndarray = np::zeros(size, np::dtype::get_builtin<uchar>());
+			shift_inv_ndarray[0] = shift_inv.x;
+			shift_inv_ndarray[1] = shift_inv.y;
+			return shift_inv_ndarray;
 		}
 	}
 }

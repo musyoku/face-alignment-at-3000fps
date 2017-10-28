@@ -1,15 +1,20 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <iostream>
 #include "forest.h"
 
 namespace lbf {
 	namespace randomforest {
-		Tree::Tree(int max_depth, int landmark_index){
+		Tree::Tree(int max_depth, int landmark_index, Forest* forest){
 			_max_depth = max_depth;
 			_autoincrement_leaf_index = 0;
-			_root = new Node(1, landmark_index);
+			_root = new Node(1, landmark_index, this);
 			_num_leaves = 0;
 			_landmark_index = landmark_index;
+			_forest = forest;
+		}
+		Tree::~Tree(){
+
 		}
 		void Tree::train(std::set<int> &data_indices,
 						 std::vector<FeatureLocation> &sampled_feature_locations, 
@@ -32,7 +37,7 @@ namespace lbf {
 				_num_leaves++;
 				return;
 			}
-			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, regression_targets);
+			bool need_to_split = node->split(data_indices, sampled_feature_locations, pixel_differences, regression_targets, _selected_feature_indices_of_all_nodes);
 			if(need_to_split == false){
 				node->mark_as_leaf(_autoincrement_leaf_index, data_indices, regression_targets);
 				_autoincrement_leaf_index++;
@@ -43,8 +48,8 @@ namespace lbf {
 			assert(node->_left_indices.size() > 0);
 			assert(node->_right_indices.size() > 0);
 
-			node->_left = new Node(node->_depth + 1, _landmark_index);
-			node->_right = new Node(node->_depth + 1, _landmark_index);
+			node->_left = new Node(node->_depth + 1, _landmark_index, this);
+			node->_right = new Node(node->_depth + 1, _landmark_index, this);
 
 			split_node(node->_left, node->_left_indices, sampled_feature_locations, pixel_differences, regression_targets);
 			split_node(node->_right, node->_right_indices, sampled_feature_locations, pixel_differences, regression_targets);

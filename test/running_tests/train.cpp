@@ -18,7 +18,7 @@ using std::endl;
 namespace p = boost::python;
 namespace np = boost::python::numpy;
 
-bool read_shape(std::string filename, cv::Mat1d &shape){
+void read_shape(std::string filename, cv::Mat1d &shape){
 	double* array = new double[68 * 2];
 	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
 	if(ifs.is_open() == false){
@@ -35,7 +35,7 @@ bool read_shape(std::string filename, cv::Mat1d &shape){
 	delete[] array;
 }
 
-bool read_rotation(std::string filename, cv::Mat1d &rotation){
+void read_rotation(std::string filename, cv::Mat1d &rotation){
 	double* array = new double[68 * 2];
 	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
 	if(ifs.is_open() == false){
@@ -52,7 +52,7 @@ bool read_rotation(std::string filename, cv::Mat1d &rotation){
 	delete[] array;
 }
 
-bool read_shift(std::string filename, cv::Point2d &shift){
+void read_shift(std::string filename, cv::Point2d &shift){
 	double* array = new double[68 * 2];
 	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
 	if(ifs.is_open() == false){

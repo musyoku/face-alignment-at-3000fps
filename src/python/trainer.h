@@ -33,6 +33,7 @@ namespace lbf {
 			cv::Mat1d project_current_estimated_shape(int augmented_data_index);
 			boost::python::numpy::ndarray python_get_current_estimated_shape(int augmented_data_index, bool transform);
 			boost::python::numpy::ndarray python_get_target_shape(int augmented_data_index, bool transform);
+			boost::python::numpy::ndarray python_get_validation_estimated_shape(int data_index, bool transform);
 			boost::python::numpy::ndarray python_estimate_shape_only_using_local_binary_features(int stage, int augmented_data_index, bool transform);
 		};
 	}

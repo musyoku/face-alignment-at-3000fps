@@ -15,6 +15,8 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Corpus>("corpus")
 	.def("get_image", &Corpus::python_get_image)
 	.def("get_num_images", &Corpus::get_num_images)
+	.def("get_rotation_inv", &Corpus::python_get_rotation_inv)
+	.def("get_shift_inv", &Corpus::python_get_shift_inv)
 	.def("add", &Corpus::add);
 
 	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, int>((args("training_corpus", "validation_corpus", "augmentation_size"))))
@@ -30,7 +32,9 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Trainer>("trainer", boost::python::init<Dataset*, Model*, int>((args("dataset", "model", "num_features_to_sample"))))
 	.def("get_current_estimated_shape", &Trainer::python_get_current_estimated_shape, ((args("data_index"), arg("transform")=true)))
 	.def("get_target_shape", &Trainer::python_get_target_shape, ((args("data_index"), arg("transform")=true)))
+	.def("get_validation_estimated_shape", &Trainer::python_get_validation_estimated_shape, ((args("data_index"), arg("transform")=true)))
 	.def("estimate_shape_only_using_local_binary_features", &Trainer::python_estimate_shape_only_using_local_binary_features, ((args("stage", "data_index"), arg("transform")=true)))
+	.def("evaluate_stage", &Trainer::evaluate_stage)
 	.def("train", &Trainer::train)
 	.def("train_stage", &Trainer::train_stage)
 	.def("train_local_binary_features_at_stage", &Trainer::train_local_binary_features_at_stage);
