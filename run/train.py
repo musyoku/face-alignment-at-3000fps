@@ -266,7 +266,7 @@ def main():
 	feature_radius = [0.29, 0.21, 0.16, 0.12, 0.08, 0.04]
 	assert len(feature_radius) == args.num_stages
 	model = lbf.model(num_stages=args.num_stages,
-					  num_trees_per_forest=args.num_trees,
+					  num_trees_per_forest=args.num_trees_per_forest,
 					  tree_depth=args.tree_depth,
 					  num_landmarks=len(mean_shape),
 					  mean_shape_ndarray=mean_shape, 
@@ -320,7 +320,7 @@ if __name__ == "__main__":
 	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=6)
-	parser.add_argument("--num-trees", "-trees", type=int, default=12)
+	parser.add_argument("--num-trees-per-forest", "-trees", type=int, default=17)
 	parser.add_argument("--num-training-features", "-features", type=int, default=500)
 	parser.add_argument("--tree-depth", "-depth", type=int, default=7)
 	args = parser.parse_args()
