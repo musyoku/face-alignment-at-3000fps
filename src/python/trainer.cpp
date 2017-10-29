@@ -45,9 +45,6 @@ namespace lbf {
 					theta = M_PI * 2.0 * sampler::uniform(0, 1);
 					cv::Point2d b(r * std::cos(theta), r * std::sin(theta));
 
-					std::cout << a << std::endl;
-					std::cout << b << std::endl;
-
 					FeatureLocation location(a, b);
 					sampled_feature_locations.push_back(location);
 				}
