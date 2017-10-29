@@ -4,8 +4,8 @@
 
 - [x] Training local binary features
 - [x] Training global linear regression
+- [x] Model serialization 
 - [ ] Validation 
-- [ ] Model serialization 
 
 ## Referrences
 
