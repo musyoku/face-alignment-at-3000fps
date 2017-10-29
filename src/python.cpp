@@ -15,6 +15,7 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Corpus>("corpus")
 	.def("get_image", &Corpus::python_get_image)
 	.def("get_num_images", &Corpus::get_num_images)
+	.def("get_normalized_shape", &Corpus::python_get_normalized_shape)
 	.def("get_rotation_inv", &Corpus::python_get_rotation_inv)
 	.def("get_shift_inv", &Corpus::python_get_shift_inv)
 	.def("add", &Corpus::add);

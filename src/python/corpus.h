@@ -34,6 +34,7 @@ namespace lbf {
 			cv::Point2d & get_shift(int data_index);
 			cv::Point2d & get_shift_inv(int data_index);
 			boost::python::numpy::ndarray python_get_image(int data_index);
+			boost::python::numpy::ndarray python_get_normalized_shape(int data_index);
 			boost::python::numpy::ndarray python_get_rotation_inv(int data_index);
 			boost::python::numpy::ndarray python_get_shift_inv(int data_index);
 		};

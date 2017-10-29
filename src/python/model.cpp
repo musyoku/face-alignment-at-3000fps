@@ -325,6 +325,8 @@ namespace lbf {
 			return utils::cv_matrix_to_ndarray_matrix(_mean_shape);
 		}
 		struct liblinear::feature_node* Model::compute_binary_features_at_stage(cv::Mat1b &image, cv::Mat1d &shape, int stage){
+			assert(shape.rows == _num_landmarks && shape.cols == 2);
+			
 			int num_total_trees = 0;
 			int num_total_leaves = 0;
 			for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){

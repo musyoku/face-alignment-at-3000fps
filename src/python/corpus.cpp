@@ -1,3 +1,4 @@
+#include "../lbf/common.h"
 #include "corpus.h"
 
 using std::cout;
@@ -8,11 +9,11 @@ namespace lbf {
 	namespace python {
 		void Corpus::add(np::ndarray image_ndarray, 
 						 np::ndarray shape_ndarray, 
-						 boost::python::numpy::ndarray normalized_shape_ndarray,
-						 boost::python::numpy::ndarray rotation,
-						 boost::python::numpy::ndarray rotation_inv,
-						 boost::python::numpy::ndarray shift,
-						 boost::python::numpy::ndarray shift_inv)
+						 np::ndarray normalized_shape_ndarray,
+						 np::ndarray rotation,
+						 np::ndarray rotation_inv,
+						 np::ndarray shift,
+						 np::ndarray shift_inv)
 		{
 			_add_ndarray_matrix_to(image_ndarray, _images);
 			_add_ndarray_matrix_to(shape_ndarray, _shapes);
@@ -28,7 +29,7 @@ namespace lbf {
 			assert(_images.size() == _rotation_inv.size());
 		}
 		template <typename T>
-		void Corpus::_add_ndarray_matrix_to(boost::python::numpy::ndarray &array, std::vector<cv::Mat_<T>> &corpus){
+		void Corpus::_add_ndarray_matrix_to(np::ndarray &array, std::vector<cv::Mat_<T>> &corpus){
 			auto size = array.get_shape();
 			auto stride = array.get_strides();
 			cv::Mat_<T> mat(size[0], size[1]);
@@ -40,7 +41,7 @@ namespace lbf {
 			}
 			corpus.push_back(mat);
 		}
-		void Corpus::_add_ndarray_point_to(boost::python::numpy::ndarray &array, std::vector<cv::Point2d> &corpus){
+		void Corpus::_add_ndarray_point_to(np::ndarray &array, std::vector<cv::Point2d> &corpus){
 			auto size = array.get_shape();
 			auto stride = array.get_strides();
 			cv::Point2d point;
@@ -63,7 +64,7 @@ namespace lbf {
 			assert(data_index < _images.size());
 			return _images[data_index];
 		}
-		boost::python::numpy::ndarray Corpus::python_get_image(int data_index){
+		np::ndarray Corpus::python_get_image(int data_index){
 			assert(data_index < _images.size());
 			cv::Mat1b &image = _images[data_index];
 
@@ -76,6 +77,11 @@ namespace lbf {
 			}
 			return image_ndarray;
 		}
+		np::ndarray Corpus::python_get_normalized_shape(int data_index){
+			assert(data_index < _normalized_shapes.size());
+			cv::Mat1d &normalized_shape = _normalized_shapes[data_index];
+			return utils::cv_matrix_to_ndarray_matrix(normalized_shape);
+		}
 		cv::Mat1d & Corpus::get_rotation(int data_index){
 			assert(data_index < _rotation.size());
 			return _rotation[data_index];
@@ -84,18 +90,10 @@ namespace lbf {
 			assert(data_index < _rotation_inv.size());
 			return _rotation_inv[data_index];
 		}
-		boost::python::numpy::ndarray Corpus::python_get_rotation_inv(int data_index){
+		np::ndarray Corpus::python_get_rotation_inv(int data_index){
 			assert(data_index < _images.size());
 			cv::Mat1d &rotation_inv = _rotation_inv[data_index];
-
-			boost::python::tuple size = boost::python::make_tuple(rotation_inv.rows, rotation_inv.cols);
-			np::ndarray rotation_inv_ndarray = np::zeros(size, np::dtype::get_builtin<uchar>());
-			for(int h = 0;h < rotation_inv.rows;h++) {
-				for(int w = 0;w < rotation_inv.cols;w++) {
-					rotation_inv_ndarray[h][w] = rotation_inv(h, w);
-				}
-			}
-			return rotation_inv_ndarray;
+			return utils::cv_matrix_to_ndarray_matrix(rotation_inv);
 		}
 		cv::Point2d & Corpus::get_shift(int data_index){
 			assert(data_index < _shift.size());
@@ -105,7 +103,7 @@ namespace lbf {
 			assert(data_index < _shift_inv.size());
 			return _shift_inv[data_index];
 		}
-		boost::python::numpy::ndarray Corpus::python_get_shift_inv(int data_index){
+		np::ndarray Corpus::python_get_shift_inv(int data_index){
 			assert(data_index < _images.size());
 			cv::Point2d &shift_inv = _shift_inv[data_index];
 

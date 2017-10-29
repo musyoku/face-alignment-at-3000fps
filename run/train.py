@@ -293,6 +293,16 @@ def main():
 		model.save(args.model_filename)
 		trainer.evaluate_stage(stage)
 
+		# training data
+		print("#", training_corpus.get_num_images())
+		for data_index in range(min(50, training_corpus.get_num_images())):
+			image = training_corpus.get_image(data_index)
+			target = training_corpus.get_normalized_shape(data_index)
+			rotation_inv = training_corpus.get_rotation_inv(data_index)
+			shift_inv = training_corpus.get_shift_inv(data_index)
+			error = model.compute_error(image, target, rotation_inv, shift_inv)
+			print(error)
+
 		# debug
 		if args.debug_directory is not None:
 			for data_index in range(min(50, training_corpus.get_num_images())):
