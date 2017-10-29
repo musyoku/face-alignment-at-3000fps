@@ -185,7 +185,7 @@ namespace lbf {
 
 					targets[landmark_index][augmented_data_index] = delta_x;
 				}
-				problem->x = targets[landmark_index];
+				problem->y = targets[landmark_index];
 				liblinear::check_parameter(problem, parameter);
 		        struct liblinear::model* model_x = liblinear::train(problem, parameter);
 
