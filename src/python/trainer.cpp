@@ -126,6 +126,7 @@ namespace lbf {
 				int feature_offset = 1;		// start with 1
 				int feature_pointer = 0;
 
+				#pragma omp parallel for
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					// find leaves
 					Forest* forest = _model->get_forest(stage, landmark_index);
@@ -184,7 +185,7 @@ namespace lbf {
 
 					targets[landmark_index][augmented_data_index] = delta_x;
 				}
-				problem->y = targets[landmark_index];
+				problem->x = targets[landmark_index];
 				liblinear::check_parameter(problem, parameter);
 		        struct liblinear::model* model_x = liblinear::train(problem, parameter);
 
@@ -253,7 +254,7 @@ namespace lbf {
 			Corpus* corpus = _dataset->_training_corpus;
 			Forest* forest = _model->get_forest(stage, landmark_index);
 
-			std::vector<FeatureLocation> &sampled_feature_locations = _sampled_feature_locations_at_stage[stage];
+			std::vector<FeatureLocation> sampled_feature_locations = _sampled_feature_locations_at_stage[stage];
 			assert(sampled_feature_locations.size() == _num_features_to_sample);
 
 			int num_data = corpus->_images.size();
