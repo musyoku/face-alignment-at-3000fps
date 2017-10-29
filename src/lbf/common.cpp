@@ -69,6 +69,7 @@ namespace lbf {
 			assert(shape.cols == 2);
 			assert(rotation.rows == 2 && rotation.cols == 2);
 			assert(shift.rows == 2 && shift.cols == 1);
+			
 			cv::Mat1d shape_T(shape.cols, shape.rows);
 			cv::transpose(shape, shape_T);
 			shape = rotation * shape_T;

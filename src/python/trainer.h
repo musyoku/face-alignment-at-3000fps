@@ -24,6 +24,7 @@ namespace lbf {
 											int data_index, 
 											int landmark_index);
 			cv::Mat1b & get_image_by_augmented_index(int augmented_data_index);
+			int get_data_index_by_augmented_index(int augmented_data_index);
 		public:
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
 			void train();
