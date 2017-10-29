@@ -116,7 +116,8 @@ int main(){
 	Py_Initialize();
 	np::initialize();
 
-	std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp";
+	// std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp";
+	std::string directory = "/media/stark/HDD/sandbox/face-alignment/cpp";
 	cv::Mat1d mean_shape_train(68, 2);
 	cv::Mat1d mean_shape_dev(68, 2);
 	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 3273);
@@ -124,8 +125,20 @@ int main(){
 
 	Model* model = new Model("lbf.model");
 
+	cout << "#" << training_corpus->get_num_images() << endl;
+	for(int data_index = 0;data_index < training_corpus->get_num_images();data_index++){
+		cv::Mat1b image = training_corpus->_images[data_index];
+		cv::Mat1d target_shape = training_corpus->_normalized_shapes[data_index];
+		cv::Mat1d rotation_inv = training_corpus->_rotation_inv[data_index];
+		cv::Mat1d shift_inv = cv::point_to_mat(training_corpus->_shift_inv[data_index]);
+		std::vector<double> errors_at_stage = model->compute_error(image, target_shape, rotation_inv, shift_inv);
+		for(double error: errors_at_stage){
+			cout << error << " ";
+		}
+		cout << endl;
+	}
+
 	delete training_corpus;
-	delete dataset;
+	delete validation_corpus;
 	delete model;
-	delete trainer;
 }

@@ -65,7 +65,10 @@ namespace lbf {
 		template cv::Mat1b ndarray_vector_to_cv_matrix(boost::python::numpy::ndarray &array);
 		template cv::Mat1d ndarray_vector_to_cv_matrix(boost::python::numpy::ndarray &array);
 
-		cv::Mat1d project_shape(cv::Mat1d &shape, cv::Mat1d &rotation, cv::Mat1d &shift){
+		cv::Mat1d project_shape(cv::Mat1d shape, cv::Mat1d &rotation, cv::Mat1d &shift){
+			assert(shape.cols == 2);
+			assert(rotation.rows == 2 && rotation.cols == 2);
+			assert(shift.rows == 2 && shift.cols == 1);
 			cv::Mat1d shape_T(shape.cols, shape.rows);
 			cv::transpose(shape, shape_T);
 			shape = rotation * shape_T;

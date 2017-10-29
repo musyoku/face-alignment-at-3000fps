@@ -370,26 +370,27 @@ namespace lbf {
 			return binary_features;
 		}
 		boost::python::list Model::python_compute_error(np::ndarray image_ndarray, 
-													    np::ndarray normalized_initial_shape_ndarray, 
 													    np::ndarray normalized_target_shape_ndarray, 
 													    np::ndarray rotation_inv_ndarray, 
 													    np::ndarray shift_inv_ndarray)
 		{
 			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
-			cv::Mat1d initial_shape = utils::ndarray_matrix_to_cv_matrix<double>(normalized_initial_shape_ndarray);
 			cv::Mat1d target_shape = utils::ndarray_matrix_to_cv_matrix<double>(normalized_target_shape_ndarray);
 			cv::Mat1d rotation_inv = utils::ndarray_matrix_to_cv_matrix<double>(rotation_inv_ndarray);
 			cv::Mat1d shift_inv = utils::ndarray_vector_to_cv_matrix<double>(shift_inv_ndarray);
-			std::vector<double> error_at_stage = compute_error(image, initial_shape, target_shape, rotation_inv, shift_inv);
+			std::vector<double> error_at_stage = compute_error(image, target_shape, rotation_inv, shift_inv);
 			return boost::python::vector_to_list(error_at_stage);
 		}
 		std::vector<double> Model::compute_error(cv::Mat1b &image, 
-												 cv::Mat1d &initial_shape, 
 												 cv::Mat1d &target_shape, 
 												 cv::Mat1d &rotation_inv, 
 												 cv::Mat1d &shift_inv)
 		{
-			cv::Mat1d &estimated_shape = initial_shape;
+			assert(target_shape.rows == _num_landmarks && target_shape.cols == 2);
+			assert(rotation_inv.rows == 2 && rotation_inv.cols == 2);
+			assert(shift_inv.rows == 2 && shift_inv.cols == 1);
+
+			cv::Mat1d estimated_shape = _mean_shape.clone();
 			std::vector<double> error_at_stage;
 
 			for(int stage = 0;stage < _num_stages;stage++){
