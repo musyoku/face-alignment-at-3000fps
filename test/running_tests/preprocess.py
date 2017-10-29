@@ -159,17 +159,15 @@ def preprocess_images(directory):
 
 	return dataset_images, dataset_landmarks
 
-def build_corpus():
+def build_corpus(targets):
 	image_list_train = []
 	shape_list_train = []
-	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
-	validation_targets = ["helen/testset", "lfpw/testset"]
 
 	mean_shape = []
 	for _ in range(68):
 		mean_shape.append([0, 0])
 
-	for target in training_targets:
+	for target in targets:
 		images, shape = preprocess_images(os.path.join(args.dataset_directory, target))
 		image_list_train += images
 		shape_list_train += shape
@@ -184,23 +182,13 @@ def build_corpus():
 		mean_shape[feature_index][0] /= len(shape_list_train)
 		mean_shape[feature_index][1] /= len(shape_list_train)
 
-	return image_list_train, shape_list_train, mean_shape
-
-def main():
-	assert args.dataset_directory is not None
-	assert args.output_directory is not None
-
-	try:
-		os.mkdir(args.output_directory)
-	except:
-		pass
-
-	# build corpus
-	image_list_train, shape_list_train, mean_shape = build_corpus()
 	mean_shape = np.asarray(mean_shape, dtype=np.float64)
 
+	return image_list_train, shape_list_train, mean_shape
+
+def dump(image_list, shape_list, mean_shape, directory):
 	# rigid transform
-	for index, (image, shape) in enumerate(zip(image_list_train, shape_list_train)):
+	for index, (image, shape) in enumerate(zip(image_list, shape_list)):
 		shape = np.asarray(shape, dtype=np.float64)
 
 		# normalize shape
@@ -219,39 +207,62 @@ def main():
 		rotation_inv = mat[:, :2]
 		shift_inv = mat[:, 2]
 
-		cv2.imwrite(os.path.join(args.output_directory, "{}.jpg".format(index)), image)
+		cv2.imwrite(os.path.join(directory, "{}.jpg".format(index)), image)
 
-		with open(os.path.join(args.output_directory, "{}.shape".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.shape".format(index)), "wb") as f:
 			for (x, y) in shape:
 				f.write(struct.pack("d", float(x)))
 				f.write(struct.pack("d", float(y)))
 
-		with open(os.path.join(args.output_directory, "{}.nshape".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.nshape".format(index)), "wb") as f:
 			for (x, y) in normalized_shape:
 				f.write(struct.pack("d", float(x)))
 				f.write(struct.pack("d", float(y)))
 
-		with open(os.path.join(args.output_directory, "{}.rotation".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.rotation".format(index)), "wb") as f:
 			f.write(struct.pack("d", float(rotation[0, 0])))
 			f.write(struct.pack("d", float(rotation[0, 1])))
 			f.write(struct.pack("d", float(rotation[1, 0])))
 			f.write(struct.pack("d", float(rotation[1, 1])))
 
-		with open(os.path.join(args.output_directory, "{}.rotation_inv".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.rotation_inv".format(index)), "wb") as f:
 			f.write(struct.pack("d", float(rotation_inv[0, 0])))
 			f.write(struct.pack("d", float(rotation_inv[0, 1])))
 			f.write(struct.pack("d", float(rotation_inv[1, 0])))
 			f.write(struct.pack("d", float(rotation_inv[1, 1])))
 
-		with open(os.path.join(args.output_directory, "{}.shift".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.shift".format(index)), "wb") as f:
 			f.write(struct.pack("d", float(shift[0])))
 			f.write(struct.pack("d", float(shift[1])))
 
-		with open(os.path.join(args.output_directory, "{}.shift_inv".format(index)), "wb") as f:
+		with open(os.path.join(directory, "{}.shift_inv".format(index)), "wb") as f:
 			f.write(struct.pack("d", float(shift_inv[0])))
 			f.write(struct.pack("d", float(shift_inv[1])))
 
-	print("#images", len(image_list_train))
+	print("#images", len(image_list))
+
+def main():
+	assert args.dataset_directory is not None
+	assert args.output_directory is not None
+
+	try:
+		os.mkdir(os.path.join(args.output_directory, "train"))
+	except:
+		pass
+	try:
+		os.mkdir(os.path.join(args.output_directory, "dev"))
+	except:
+		pass
+
+	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
+	validation_targets = ["helen/testset", "lfpw/testset"]
+
+	# build corpus
+	image_list_train, shape_list_train, mean_shape = build_corpus(training_targets)
+	image_list_dev, shape_list_dev, _ = build_corpus(validation_targets)
+
+	dump(image_list_train, shape_list_train, mean_shape, os.path.join(args.output_directory, "train"))
+	dump(image_list_dev, shape_list_dev, mean_shape, os.path.join(args.output_directory, "dev"))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

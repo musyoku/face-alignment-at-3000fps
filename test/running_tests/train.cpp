@@ -67,19 +67,12 @@ void read_shift(std::string filename, cv::Point2d &shift){
 	delete[] array;
 }
 
-int main(){
-	Py_Initialize();
-	np::initialize();
-
-	std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp/";
-	Corpus* training_corpus = new Corpus();
-	Corpus* validation_corpus = new Corpus();
-	cv::Mat1d mean_shape(68, 2);
+Corpus* build_corpus(std::string directory, cv::Mat1d &mean_shape){
 	for(int h = 0;h < 68;h++){
 		mean_shape(h, 0) = 0;
 		mean_shape(h, 1) = 0;
 	}
-
+	Corpus* corpus = new Corpus();
 	for(int data_index = 0;data_index < 135;data_index++){
 		std::string image_filename = directory + std::to_string(data_index) + ".jpg";
 		std::string rotation_filename = directory + std::to_string(data_index) + ".rotation";
@@ -105,29 +98,41 @@ int main(){
 		read_shift(directory + std::to_string(data_index) + ".shift", shift);
 		read_shift(directory + std::to_string(data_index) + ".shift_inv", shift_inv);
 
-		training_corpus->_images.push_back(image);
-		training_corpus->_shapes.push_back(shape);
-		training_corpus->_normalized_shapes.push_back(shape);
-		training_corpus->_rotation.push_back(rotation);
-		training_corpus->_rotation_inv.push_back(rotation_inv);
-		training_corpus->_shift.push_back(shift);
-		training_corpus->_shift_inv.push_back(shift_inv);
+		corpus->_images.push_back(image);
+		corpus->_shapes.push_back(shape);
+		corpus->_normalized_shapes.push_back(shape);
+		corpus->_rotation.push_back(rotation);
+		corpus->_rotation_inv.push_back(rotation_inv);
+		corpus->_shift.push_back(shift);
+		corpus->_shift_inv.push_back(shift_inv);
 
 		mean_shape += shape;
 	}
-	mean_shape /= training_corpus->get_num_images();
+	mean_shape /= corpus->get_num_images();
+	return corpus;
+}
 
-	boost::python::tuple size = boost::python::make_tuple(mean_shape.rows, mean_shape.cols);
+int main(){
+	Py_Initialize();
+	np::initialize();
+
+	std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp";
+	cv::Mat1d mean_shape_train(68, 2);
+	cv::Mat1d mean_shape_dev(68, 2);
+	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train);
+	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev);
+
+	boost::python::tuple size = boost::python::make_tuple(mean_shape_train.rows, mean_shape_train.cols);
 	np::ndarray mean_shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
-	for(int h = 0;h < mean_shape.rows;h++) {
-		for(int w = 0;w < mean_shape.cols;w++) {
-			mean_shape_ndarray[h][w] = mean_shape(h, w);
+	for(int h = 0;h < mean_shape_train.rows;h++) {
+		for(int w = 0;w < mean_shape_train.cols;w++) {
+			mean_shape_ndarray[h][w] = mean_shape_train(h, w);
 		}
 	}
 
 	int augmentation_size = 20;
-	int num_stages = 6;
-	int num_trees_per_forest = 5;
+	int num_stages = 5;
+	int num_trees_per_forest = 20;
 	int tree_depth = 7;
 	int num_landmarks = 68;
 	int num_features_to_sample = 500;
@@ -137,8 +142,14 @@ int main(){
 
 	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
+	std::string filename = "lbf.model";
+	model->python_save(filename);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
-	trainer->train();
+	for(int stage = 0;stage < num_stages;stage++){
+		trainer->train_stage(stage);
+		model->python_save(filename);
+		trainer->evaluate_stage(stage);
+	}
 
 	delete training_corpus;
 	delete dataset;
