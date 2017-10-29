@@ -122,34 +122,7 @@ int main(){
 	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 3273);
 	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev, 554);
 
-	boost::python::tuple size = boost::python::make_tuple(mean_shape_train.rows, mean_shape_train.cols);
-	np::ndarray mean_shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
-	for(int h = 0;h < mean_shape_train.rows;h++) {
-		for(int w = 0;w < mean_shape_train.cols;w++) {
-			mean_shape_ndarray[h][w] = mean_shape_train(h, w);
-		}
-	}
-
-	int augmentation_size = 20;
-	int num_stages = 5;
-	int num_trees_per_forest = 20;
-	int tree_depth = 7;
-	int num_landmarks = 68;
-	int num_features_to_sample = 500;
-	std::vector<double> feature_radius{0.29, 0.21, 0.16, 0.12, 0.08, 0.04};
-
-	cout << "#images " << training_corpus->get_num_images() << endl;
-
-	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
-	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
-	std::string filename = "lbf.model";
-	model->python_save(filename);
-	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
-	for(int stage = 0;stage < num_stages;stage++){
-		trainer->train_stage(stage);
-		model->python_save(filename);
-		trainer->evaluate_stage(stage);
-	}
+	Model* model = new Model("lbf.model");
 
 	delete training_corpus;
 	delete dataset;

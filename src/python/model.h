@@ -41,8 +41,19 @@ namespace lbf {
 			void finish_training_at_stage(int stage);
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);
+			boost::python::list python_compute_error(boost::python::numpy::ndarray image_ndarray, 
+										boost::python::numpy::ndarray normalized_initial_shape_ndarray, 
+										boost::python::numpy::ndarray normalized_target_shape_ndarray, 
+										boost::python::numpy::ndarray rotation_inv_ndarray, 
+										boost::python::numpy::ndarray shift_inv_ndarray);
+			std::vector<double> compute_error(cv::Mat1b &image, 
+											  cv::Mat1d &initial_shape, 
+											  cv::Mat1d &target_shape, 
+											  cv::Mat1d &rotation_inv, 
+											  cv::Mat1d &shift_inv);
 			boost::python::numpy::ndarray python_estimate_shape(boost::python::numpy::ndarray image_ndarray);
 			boost::python::numpy::ndarray python_get_mean_shape();
+			struct liblinear::feature_node* compute_binary_features_at_stage(cv::Mat1b &image, cv::Mat1d &shape, int stage);
 		};
 	}
 }

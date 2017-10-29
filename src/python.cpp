@@ -26,6 +26,7 @@ BOOST_PYTHON_MODULE(lbf){
 	.def(boost::python::init<std::string>())
 	.def("estimate_shape", &Model::python_estimate_shape)
 	.def("get_mean_shape", &Model::python_get_mean_shape)
+	.def("compute_error", &Model::python_compute_error)
 	.def("save", &Model::python_save)
 	.def("load", &Model::python_load);
 

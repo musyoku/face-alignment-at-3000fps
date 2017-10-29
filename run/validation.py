@@ -187,7 +187,7 @@ def read_images_and_shapes(targets):
 	return image_list, shape_list, mean_shape
 
 def build_corpus(targets, mean_shape=None):
-	corpus = lbf.corpus()
+	corpus = []
 	image_list, shape_list, _mean_shape = read_images_and_shapes(targets)
 	if mean_shape is None:
 		mean_shape = _mean_shape
@@ -211,7 +211,7 @@ def build_corpus(targets, mean_shape=None):
 		rotation_inv = mat[:, :2]
 		shift_inv = mat[:, 2]
 
-		corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv)
+		corpus.append((image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv))
 
 	return corpus, mean_shape
 
@@ -239,13 +239,11 @@ def main():
 
 	# build corpus
 	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
-	# training_targets = ["afw"]
 	validation_targets = ["helen/testset", "lfpw/testset"]
-	# validation_targets = ["ibug"]
 	training_corpus, mean_shape = build_corpus(training_targets)
 	validation_corpus, _ = build_corpus(validation_targets, mean_shape=mean_shape)
-	print("#images (train):", training_corpus.get_num_images())
-	print("#images (val):", validation_corpus.get_num_images())
+	print("#images (train):", len(training_corpus))
+	print("#images (val):", len(validation_corpus))
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -257,62 +255,13 @@ def main():
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
 	cv2.imwrite("mean.jpg", mean_shape_image)
 
-	# initialize dataset
-	dataset = lbf.dataset(training_corpus=training_corpus, 
-						  validation_corpus=validation_corpus,
-						  augmentation_size=args.augmentation_size)
+	# model
+	model = lbf.model(args.model_filename)
 
-	# initlaize model
-	feature_radius = [0.29, 0.21, 0.16, 0.12, 0.08]
-	assert len(feature_radius) == args.num_stages
-	model = lbf.model(num_stages=args.num_stages,
-					  num_trees_per_forest=args.num_trees_per_forest,
-					  tree_depth=args.tree_depth,
-					  num_landmarks=len(mean_shape),
-					  mean_shape_ndarray=mean_shape, 
-					  feature_radius=feature_radius)
-	model.save(args.model_filename)
-
-	# training
-	trainer = lbf.trainer(dataset=dataset, 
-						  model=model,
-						  num_features_to_sample=args.num_training_features)
-
-	# debug
-	# if args.debug_directory is not None:
-	# 	for data_index in range(min(50, training_corpus.get_num_images())):
-	# 		for n in range(args.augmentation_size):
-	# 			augmented_data_index = training_corpus.get_num_images() * (n + 1) + data_index
-	# 			image = training_corpus.get_image(data_index)
-
-	# 			estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-	# 			imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_{}_initial_shape_stage_{}.jpg".format(data_index, n, 0)))
-
-	for stage in range(args.num_stages):
-		trainer.train_stage(stage)
-		model.save(args.model_filename)
-		trainer.evaluate_stage(stage)
-
-		# debug
-		if args.debug_directory is not None:
-			for data_index in range(min(50, training_corpus.get_num_images())):
-				augmented_data_index = data_index
-				image = training_corpus.get_image(data_index)
-
-				estimated_shape = trainer.estimate_shape_only_using_local_binary_features(stage, augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_local_stage_{}.jpg".format(data_index, stage)))
-				
-				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_estimated_stage_{}.jpg".format(data_index, stage)))
-				
-				target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
-
-			for data_index in range(min(50, validation_corpus.get_num_images())):
-				# validation
-				image = validation_corpus.get_image(data_index)
-				estimated_shape = trainer.get_validation_estimated_shape(data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "validation_{}_stage_{}.jpg".format(data_index, stage)))
+	# training data
+	for (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in training_corpus:
+		error = model.compute_error(image, shape, mean_shape, rotation_inv, shift_inv)
+		print(error)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

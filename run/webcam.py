@@ -2,6 +2,13 @@ from imutils.video import VideoStream
 import argparse, imutils, time, dlib, cv2
 import lbf
 
+def clip(image, rect, padding):
+	top = int(max(0, rect.top() - padding))
+	left = int(max(0, rect.left() - padding))
+	bottom = int(min(image.shape[0], rect.bottom() + padding))
+	right = int(min(image.shape[1], rect.right() + padding))
+	return image[top:bottom, left:right]
+
 def main():
 	detector = dlib.get_frontal_face_detector()
 	model = lbf.model(args.model_filename)
@@ -17,9 +24,9 @@ def main():
 		rects = detector(gray, 0)
 
 		for rect in rects:
-			face = gray[rect.top():rect.bottom(), rect.left():rect.right()]
-			print(face.shape)
-			face_rgb = frame[rect.top():rect.bottom(), rect.left():rect.right()]
+			padding = rect.width() * 0.3
+			face = clip(gray, rect, padding)
+			face_rgb = clip(frame, rect, padding)
 			face_height, face_width = face.shape
 			face_width /= 2
 			face_height /= 2
