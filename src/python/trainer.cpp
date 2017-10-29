@@ -81,16 +81,14 @@ namespace lbf {
 			}
 
 		}
+		cv::Mat1b & Trainer::get_image_by_augmented_index(int augmented_data_index){
+			assert(augmented_data_index < _augmented_indices_to_data_index.size());
+			int data_index = _augmented_indices_to_data_index[augmented_data_index];
+			return _dataset->_training_corpus->_images[data_index];
+		}
 		void Trainer::train(){
 			for(int stage = 0;stage < _model->_num_stages;stage++){
 				train_stage(stage);
-			}
-		}
-		void Trainer::train_local_binary_features_at_stage(int stage){
-			cout << "training local binary features ..." << endl;
-			#pragma omp parallel for
-			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-				_train_forest(stage, landmark_index);
 			}
 		}
 		void Trainer::train_stage(int stage){
@@ -115,40 +113,17 @@ namespace lbf {
 			cout << "#trees = " << num_total_trees << endl;
 			cout << "#features = " << num_total_leaves << endl;
 			struct liblinear::feature_node** binary_features = new liblinear::feature_node*[_num_augmented_data];
-			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
-			}
+			// for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+			// 	binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
+			// }
 			//// compute binary features
 			#pragma omp parallel for
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 
-				cv::Mat1d estimated_shape = project_current_estimated_shape(augmented_data_index);
 				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
-				int feature_offset = 1;		// start with 1
-				int feature_pointer = 0;
+				cv::Mat1d estimated_shape = project_current_estimated_shape(augmented_data_index);
 
-				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-					// find leaves
-					Forest* forest = _model->get_forest(stage, landmark_index);
-					std::vector<Node*> leaves;
-					forest->predict(estimated_shape, image, leaves);
-					assert(leaves.size() == forest->get_num_trees());
-					// delta_shape
-					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
-						Tree* tree = forest->get_tree_at(tree_index);
-						int num_leaves = tree->get_num_leaves();
-						Node* leaf = leaves[tree_index];
-						assert(feature_pointer < num_total_trees + 1);
-						liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
-						feature.index = feature_offset + leaf->identifier();
-						feature.value = 1.0;	// binary feature
-						feature_pointer++;
-						feature_offset += tree->get_num_leaves();
-					}
-				}
-				liblinear::feature_node &feature = binary_features[augmented_data_index][feature_pointer];
-				feature.index = -1;
-				feature.value = -1;
+				binary_features[augmented_data_index] = _model->compute_binary_features_at_stage(image, estimated_shape, stage);
 			}
 
 			if (PyErr_CheckSignals() != 0) {
@@ -217,6 +192,7 @@ namespace lbf {
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
 					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
+
 					double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
 					double delta_y = liblinear::predict(model_y, binary_features[augmented_data_index]);
 
@@ -245,10 +221,12 @@ namespace lbf {
 			}
 			delete[] binary_features;
 		}
-		cv::Mat1b & Trainer::get_image_by_augmented_index(int augmented_data_index){
-			assert(augmented_data_index < _augmented_indices_to_data_index.size());
-			int data_index = _augmented_indices_to_data_index[augmented_data_index];
-			return _dataset->_training_corpus->_images[data_index];
+		void Trainer::train_local_binary_features_at_stage(int stage){
+			cout << "training local binary features ..." << endl;
+			#pragma omp parallel for
+			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+				_train_forest(stage, landmark_index);
+			}
 		}
 		void Trainer::_train_forest(int stage, int landmark_index){
 			Corpus* corpus = _dataset->_training_corpus;
@@ -330,21 +308,8 @@ namespace lbf {
 
 			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
 			cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
-			cv::Mat1d shift_inv(2, 1);
-			shift_inv(0, 0) = shift_inv_point.x;
-			shift_inv(1, 0) = shift_inv_point.y;
 
-			// inverse
-			cv::Mat1d shape_T(shape.cols, shape.rows);
-			cv::transpose(shape, shape_T);
-			shape = rotation_inv * shape_T;
-			for (int w = 0; w < shape.cols; w++) {
-				shape.col(w) += shift_inv;
-			}
-			cv::transpose(shape, shape_T);
-			shape = shape_T;
-
-			return shape;
+			return utils::project_shape(shape, rotation_inv, shift_inv_point);
 		}
 		np::ndarray Trainer::python_get_target_shape(int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_target_shapes.size());
@@ -356,46 +321,19 @@ namespace lbf {
 
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
 				cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
-				cv::Mat1d shift_inv(2, 1);
-				shift_inv(0, 0) = shift_inv_point.x;
-				shift_inv(1, 0) = shift_inv_point.y;
-
-				// inverse
-				cv::Mat1d shape_T(shape.cols, shape.rows);
-				cv::transpose(shape, shape_T);
-				shape = rotation_inv * shape_T;
-				for (int w = 0; w < shape.cols; w++) {
-					shape.col(w) += shift_inv;
-				}
-				cv::transpose(shape, shape_T);
-				shape = shape_T;
+				shape = utils::project_shape(shape, rotation_inv, shift_inv_point);
 			}
-
-			boost::python::tuple size = boost::python::make_tuple(shape.rows, shape.cols);
-			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
-			for(int h = 0;h < shape.rows;h++) {
-				for(int w = 0;w < shape.cols;w++) {
-					shape_ndarray[h][w] = shape(h, w);
-				}
-			}
-			return shape_ndarray;
+			
+			return utils::cv_matrix_to_ndarray_matrix(shape);
 		}
 		np::ndarray Trainer::python_get_current_estimated_shape(int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());
-			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];
-
 			if(transform){
-				shape = project_current_estimated_shape(augmented_data_index);
+				cv::Mat1d shape = project_current_estimated_shape(augmented_data_index);
+				return utils::cv_matrix_to_ndarray_matrix(shape);
 			}
-
-			boost::python::tuple size = boost::python::make_tuple(shape.rows, shape.cols);
-			np::ndarray shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
-			for(int h = 0;h < shape.rows;h++) {
-				for(int w = 0;w < shape.cols;w++) {
-					shape_ndarray[h][w] = shape(h, w);
-				}
-			}
-			return shape_ndarray;
+			cv::Mat1d shape = _augmented_estimated_shapes[augmented_data_index];
+			return utils::cv_matrix_to_ndarray_matrix(shape);
 		}
 		np::ndarray Trainer::python_estimate_shape_only_using_local_binary_features(int stage, int augmented_data_index, bool transform){
 			assert(augmented_data_index < _augmented_estimated_shapes.size());

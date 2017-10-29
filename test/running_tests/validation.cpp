@@ -138,6 +138,20 @@ int main(){
 		cout << endl;
 	}
 
+
+	cout << "#" << validation_corpus->get_num_images() << endl;
+	for(int data_index = 0;data_index < validation_corpus->get_num_images();data_index++){
+		cv::Mat1b image = validation_corpus->_images[data_index];
+		cv::Mat1d target_shape = validation_corpus->_normalized_shapes[data_index];
+		cv::Mat1d rotation_inv = validation_corpus->_rotation_inv[data_index];
+		cv::Mat1d shift_inv = cv::point_to_mat(validation_corpus->_shift_inv[data_index]);
+		std::vector<double> errors_at_stage = model->compute_error(image, target_shape, rotation_inv, shift_inv);
+		for(double error: errors_at_stage){
+			cout << error << " ";
+		}
+		cout << endl;
+	}
+
 	delete training_corpus;
 	delete validation_corpus;
 	delete model;

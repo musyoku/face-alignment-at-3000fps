@@ -50,6 +50,9 @@ namespace lbf {
 											  cv::Mat1d &rotation_inv, 
 											  cv::Mat1d &shift_inv);
 			boost::python::numpy::ndarray python_estimate_shape(boost::python::numpy::ndarray image_ndarray);
+			boost::python::numpy::ndarray python_estimate_shape_by_translation(boost::python::numpy::ndarray image_ndarray, 
+																			   boost::python::numpy::ndarray rotation_inv_ndarray, 
+																			   boost::python::numpy::ndarray shift_inv_ndarray);
 			boost::python::numpy::ndarray python_get_mean_shape();
 			struct liblinear::feature_node* compute_binary_features_at_stage(cv::Mat1b &image, cv::Mat1d &shape, int stage);
 		};

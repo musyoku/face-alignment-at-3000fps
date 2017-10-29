@@ -259,9 +259,22 @@ def main():
 	model = lbf.model(args.model_filename)
 
 	# training data
-	for (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in training_corpus:
-		error = model.compute_error(image, shape, mean_shape, rotation_inv, shift_inv)
+	print("#", len(training_corpus))
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in enumerate(training_corpus):
+		error = model.compute_error(image, shape, rotation_inv, shift_inv)
 		print(error)
+		shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+		shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+		imwrite(image.copy(), shape, os.path.join(args.debug_directory, "train_{}.jpg".format(data_index)))
+
+	# validation data
+	print("#", len(validation_corpus))
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in enumerate(validation_corpus):
+		error = model.compute_error(image, shape, rotation_inv, shift_inv)
+		print(error)
+		shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+		shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+		imwrite(image.copy(), shape, os.path.join(args.debug_directory, "validation_{}.jpg".format(data_index)))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

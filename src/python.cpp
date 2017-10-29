@@ -25,6 +25,7 @@ BOOST_PYTHON_MODULE(lbf){
 	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, np::ndarray, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "mean_shape_ndarray", "feature_radius"))))
 	.def(boost::python::init<std::string>())
 	.def("estimate_shape", &Model::python_estimate_shape)
+	.def("estimate_shape_by_translation", &Model::python_estimate_shape_by_translation)
 	.def("get_mean_shape", &Model::python_get_mean_shape)
 	.def("compute_error", &Model::python_compute_error)
 	.def("save", &Model::python_save)

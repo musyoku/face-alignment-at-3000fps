@@ -78,7 +78,7 @@ namespace lbf {
 			cv::transpose(shape, shape_T);
 			return shape_T;
 		}
-		cv::Mat1d project_shape(cv::Mat1d &shape, cv::Mat1d &rotation, cv::Point2d &shift_point){
+		cv::Mat1d project_shape(cv::Mat1d shape, cv::Mat1d &rotation, cv::Point2d &shift_point){
 			cv::Mat1d shift = cv::point_to_mat(shift_point);
 			return project_shape(shape, rotation, shift);
 		}

@@ -254,73 +254,65 @@ namespace lbf {
 		}
 		boost::python::numpy::ndarray Model::python_estimate_shape(boost::python::numpy::ndarray image_ndarray){
 			using namespace std;
-			auto image_size = image_ndarray.get_shape();
-			auto stride = image_ndarray.get_strides();
-			cv::Mat_<uchar> image(image_size[0], image_size[1]);
-			for (int h = 0; h < image_size[0]; ++h) {
-				for (int w = 0; w < image_size[1]; ++w) {
-					uchar value = *reinterpret_cast<uchar*>(image_ndarray.get_data() + h * stride[0] + w * stride[1]);
-					image(h, w) = value;
-				}
-			}
+			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
 			cv::Mat1d estimated_shape = _mean_shape.clone();
+
 			for(int stage = 0;stage < _num_stages;stage++){
 				if(_training_finished_at_stage[stage] == false){
 					continue;
 				}
-				int num_total_trees = 0;
-				int num_total_leaves = 0;
-				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
-					Forest* forest = get_forest(stage, landmark_index);
-					num_total_trees += forest->get_num_trees();
-					num_total_leaves += forest->get_num_total_leaves();
-				}
 
-				//// compute binary features
-				struct liblinear::feature_node* binary_features = new liblinear::feature_node[num_total_trees + 1];
-				int feature_offset = 1;		// start with 1
-				int feature_pointer = 0;
-
-				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
-					// find leaves
-					Forest* forest = get_forest(stage, landmark_index);
-					std::vector<Node*> leaves;
-					forest->predict(estimated_shape, image, leaves);
-					assert(leaves.size() == forest->get_num_trees());
-					// delta_shape
-					for(int tree_index = 0;tree_index < forest->get_num_trees();tree_index++){
-						Tree* tree = forest->get_tree_at(tree_index);
-						int num_leaves = tree->get_num_leaves();
-						Node* leaf = leaves[tree_index];
-						assert(feature_pointer < num_total_trees + 1);
-						liblinear::feature_node &feature = binary_features[feature_pointer];
-						feature.index = feature_offset + leaf->identifier();
-						feature.value = 1.0;	// binary feature
-						feature_pointer++;
-						feature_offset += tree->get_num_leaves();
-					}
-				}
-				liblinear::feature_node &feature = binary_features[feature_pointer];
-				feature.index = -1;
-				feature.value = -1;
+				struct liblinear::feature_node* binary_features = compute_binary_features_at_stage(image, estimated_shape, stage);
 
 				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
 
 					struct liblinear::model* model_x = get_linear_model_x_at(stage, landmark_index);
 					struct liblinear::model* model_y = get_linear_model_y_at(stage, landmark_index);
 
-					if(model_x == NULL){
-						continue;
-					}
-					if(model_y == NULL){
-						continue;
-					}
+					assert(model_x != NULL);
+					assert(model_y != NULL);
 
 					double delta_x = liblinear::predict(model_x, binary_features);
 					double delta_y = liblinear::predict(model_y, binary_features);
 
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
+				}
+				delete[] binary_features;
+			}
 
-					// update shape
+			return utils::cv_matrix_to_ndarray_matrix(estimated_shape);
+		}
+		boost::python::numpy::ndarray Model::python_estimate_shape_by_translation(
+			boost::python::numpy::ndarray image_ndarray, 
+			boost::python::numpy::ndarray rotation_inv_ndarray, 
+			boost::python::numpy::ndarray shift_inv_ndarray)
+		{
+			using namespace std;
+			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
+			cv::Mat1d rotation_inv = utils::ndarray_matrix_to_cv_matrix<double>(rotation_inv_ndarray);
+			cv::Mat1d shift_inv = utils::ndarray_vector_to_cv_matrix<double>(shift_inv_ndarray);
+			cv::Mat1d estimated_shape = _mean_shape.clone();
+			
+			for(int stage = 0;stage < _num_stages;stage++){
+				if(_training_finished_at_stage[stage] == false){
+					continue;
+				}
+
+				cv::Mat1d projected_estimated_shape = utils::project_shape(estimated_shape, rotation_inv, shift_inv);
+				struct liblinear::feature_node* binary_features = compute_binary_features_at_stage(image, projected_estimated_shape, stage);
+
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+
+					struct liblinear::model* model_x = get_linear_model_x_at(stage, landmark_index);
+					struct liblinear::model* model_y = get_linear_model_y_at(stage, landmark_index);
+
+					assert(model_x != NULL);
+					assert(model_y != NULL);
+
+					double delta_x = liblinear::predict(model_x, binary_features);
+					double delta_y = liblinear::predict(model_y, binary_features);
+
 					estimated_shape(landmark_index, 0) += delta_x;
 					estimated_shape(landmark_index, 1) += delta_y;
 				}
@@ -422,7 +414,7 @@ namespace lbf {
 					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
 					error += std::sqrt(error_x * error_x + error_y * error_y);
 				}
-				error_at_stage.push_back(error);
+				error_at_stage.push_back(error / _num_landmarks);
 				delete[] binary_features;
 			}
 			return error_at_stage;
