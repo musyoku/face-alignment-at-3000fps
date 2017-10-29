@@ -119,6 +119,7 @@ namespace lbf {
 				binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
 			}
 			//// compute binary features
+			#pragma omp parallel for
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 
 				cv::Mat1d estimated_shape = project_current_estimated_shape(augmented_data_index);
@@ -126,7 +127,6 @@ namespace lbf {
 				int feature_offset = 1;		// start with 1
 				int feature_pointer = 0;
 
-				#pragma omp parallel for
 				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 					// find leaves
 					Forest* forest = _model->get_forest(stage, landmark_index);
