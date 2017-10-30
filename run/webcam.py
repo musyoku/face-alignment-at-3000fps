@@ -37,7 +37,7 @@ def main():
 				y = int(face_height + y * face_height)
 				cv2.line(face_rgb, (x - 4, y), (x + 4, y), white, 1)
 				cv2.line(face_rgb, (x, y - 4), (x, y + 4), white, 1)
-			cv2.imshow("face", face_rgb)
+			cv2.imshow("face", face)
 		  
 		cv2.imshow("frame", frame)
 		key = cv2.waitKey(1) & 0xFF

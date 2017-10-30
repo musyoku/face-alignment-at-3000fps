@@ -28,6 +28,7 @@ namespace lbf {
 		cv::Mat_<T> ndarray_vector_to_cv_matrix(boost::python::numpy::ndarray &array);
 		cv::Mat1d project_shape(cv::Mat1d shape, cv::Mat1d &rotation, cv::Mat1d &shift);
 		cv::Mat1d project_shape(cv::Mat1d shape, cv::Mat1d &rotation, cv::Point2d &shift_point);
-		boost::python::numpy::ndarray cv_matrix_to_ndarray_matrix(cv::Mat1d &cv_matrix);
+		template <typename T>
+		boost::python::numpy::ndarray cv_matrix_to_ndarray_matrix(cv::Mat_<T> &cv_matrix);
 	}
 }

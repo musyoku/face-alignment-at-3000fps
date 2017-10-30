@@ -252,8 +252,7 @@ namespace lbf {
 			ifs.close();
 			return success;
 		}
-		boost::python::numpy::ndarray Model::python_estimate_shape(boost::python::numpy::ndarray image_ndarray){
-			using namespace std;
+		np::ndarray Model::python_estimate_shape(np::ndarray image_ndarray){
 			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
 			cv::Mat1d estimated_shape = _mean_shape.clone();
 
@@ -283,10 +282,43 @@ namespace lbf {
 
 			return utils::cv_matrix_to_ndarray_matrix(estimated_shape);
 		}
-		boost::python::numpy::ndarray Model::python_estimate_shape_by_translation(
-			boost::python::numpy::ndarray image_ndarray, 
-			boost::python::numpy::ndarray rotation_inv_ndarray, 
-			boost::python::numpy::ndarray shift_inv_ndarray)
+		boost::python::numpy::ndarray Model::python_estimate_shape_using_initial_shape(
+			boost::python::numpy::ndarray image_ndarray,
+			boost::python::numpy::ndarray initial_shape_ndarray)
+		{
+			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
+			cv::Mat1d estimated_shape = utils::ndarray_matrix_to_cv_matrix<double>(initial_shape_ndarray);
+
+			for(int stage = 0;stage < _num_stages;stage++){
+				if(_training_finished_at_stage[stage] == false){
+					continue;
+				}
+
+				struct liblinear::feature_node* binary_features = compute_binary_features_at_stage(image, estimated_shape, stage);
+
+				for(int landmark_index = 0;landmark_index < _num_landmarks;landmark_index++){
+
+					struct liblinear::model* model_x = get_linear_model_x_at(stage, landmark_index);
+					struct liblinear::model* model_y = get_linear_model_y_at(stage, landmark_index);
+
+					assert(model_x != NULL);
+					assert(model_y != NULL);
+
+					double delta_x = liblinear::predict(model_x, binary_features);
+					double delta_y = liblinear::predict(model_y, binary_features);
+
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
+				}
+				delete[] binary_features;
+			}
+
+			return utils::cv_matrix_to_ndarray_matrix(estimated_shape);
+		}
+		np::ndarray Model::python_estimate_shape_by_translation(
+			np::ndarray image_ndarray, 
+			np::ndarray rotation_inv_ndarray, 
+			np::ndarray shift_inv_ndarray)
 		{
 			using namespace std;
 			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
@@ -321,7 +353,7 @@ namespace lbf {
 
 			return utils::cv_matrix_to_ndarray_matrix(estimated_shape);
 		}
-		boost::python::numpy::ndarray Model::python_get_mean_shape(){
+		np::ndarray Model::python_get_mean_shape(){
 			return utils::cv_matrix_to_ndarray_matrix(_mean_shape);
 		}
 		struct liblinear::feature_node* Model::compute_binary_features_at_stage(cv::Mat1b &image, cv::Mat1d &shape, int stage){

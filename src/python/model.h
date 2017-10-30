@@ -50,6 +50,8 @@ namespace lbf {
 											  cv::Mat1d &rotation_inv, 
 											  cv::Mat1d &shift_inv);
 			boost::python::numpy::ndarray python_estimate_shape(boost::python::numpy::ndarray image_ndarray);
+			boost::python::numpy::ndarray python_estimate_shape_using_initial_shape(boost::python::numpy::ndarray image_ndarray,
+																					boost::python::numpy::ndarray initial_shape_ndarray);
 			boost::python::numpy::ndarray python_estimate_shape_by_translation(boost::python::numpy::ndarray image_ndarray, 
 																			   boost::python::numpy::ndarray rotation_inv_ndarray, 
 																			   boost::python::numpy::ndarray shift_inv_ndarray);

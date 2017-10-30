@@ -295,34 +295,43 @@ def main():
 
 		# training data
 		print("#", training_corpus.get_num_images())
+		_model = lbf.model(args.model_filename)
 		for data_index in range(min(50, training_corpus.get_num_images())):
 			image = training_corpus.get_image(data_index)
 			target = training_corpus.get_normalized_shape(data_index)
 			rotation_inv = training_corpus.get_rotation_inv(data_index)
 			shift_inv = training_corpus.get_shift_inv(data_index)
+			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_true_train_{}.jpg".format(data_index)))
+			shape = _model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
 			error = model.compute_error(image, target, rotation_inv, shift_inv)
-			print(error)
+			_error = _model.compute_error(image, target, rotation_inv, shift_inv)
+			print(error, _error)
+
 
 		# debug
-		if args.debug_directory is not None:
-			for data_index in range(min(50, training_corpus.get_num_images())):
-				augmented_data_index = data_index
-				image = training_corpus.get_image(data_index)
+		# if args.debug_directory is not None:
+		# 	for data_index in range(min(50, training_corpus.get_num_images())):
+		# 		augmented_data_index = data_index
+		# 		image = training_corpus.get_image(data_index)
 
-				estimated_shape = trainer.estimate_shape_only_using_local_binary_features(stage, augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_local_stage_{}.jpg".format(data_index, stage)))
+		# 		estimated_shape = trainer.estimate_shape_only_using_local_binary_features(stage, augmented_data_index, transform=True)
+		# 		imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_local_stage_{}.jpg".format(data_index, stage)))
 				
-				estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_estimated_stage_{}.jpg".format(data_index, stage)))
+		# 		estimated_shape = trainer.get_current_estimated_shape(augmented_data_index, transform=True)
+		# 		imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "{}_estimated_stage_{}.jpg".format(data_index, stage)))
 				
-				target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
-				imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
+		# 		target_shape = trainer.get_target_shape(augmented_data_index, transform=True)
+		# 		imwrite(image.copy(), target_shape, os.path.join(args.debug_directory, "{}_target_stage_{}.jpg".format(data_index, stage)))
 
-			for data_index in range(min(50, validation_corpus.get_num_images())):
-				# validation
-				image = validation_corpus.get_image(data_index)
-				estimated_shape = trainer.get_validation_estimated_shape(data_index, transform=True)
-				imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "validation_{}_stage_{}.jpg".format(data_index, stage)))
+		# 	for data_index in range(min(50, validation_corpus.get_num_images())):
+		# 		# validation
+		# 		image = validation_corpus.get_image(data_index)
+		# 		estimated_shape = trainer.get_validation_estimated_shape(data_index, transform=True)
+		# 		imwrite(image.copy(), estimated_shape, os.path.join(args.debug_directory, "validation_{}_stage_{}.jpg".format(data_index, stage)))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

@@ -8,7 +8,6 @@ namespace lbf {
 	namespace python {
 		class Trainer {
 		private:
-			Dataset* _dataset;
 			int _num_features_to_sample;
 			int _num_augmented_data;
 			std::vector<cv::Mat1d> _augmented_estimated_shapes;
@@ -25,6 +24,7 @@ namespace lbf {
 			cv::Mat1b & get_image_by_augmented_index(int augmented_data_index);
 			int get_data_index_by_augmented_index(int augmented_data_index);
 		public:
+			Dataset* _dataset;
 			Model* _model;
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
 			void train();
