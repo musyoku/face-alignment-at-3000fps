@@ -310,7 +310,7 @@ def main():
 			shape = _model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
 			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
 			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
-			
+
 			error = model.compute_error(image, target, rotation_inv, shift_inv)
 			_error = _model.compute_error(image, target, rotation_inv, shift_inv)
 			print(error, _error)
@@ -342,7 +342,7 @@ if __name__ == "__main__":
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--debug-directory", "-debug", type=str, default=None)
 	parser.add_argument("--model-filename", "-model", type=str, default="lbf.model")
-	parser.add_argument("--max-image-size", "-size", type=int, default=500)
+	parser.add_argument("--max-image-size", "-size", type=int, default=300)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=5)
 	parser.add_argument("--num-trees-per-forest", "-trees", type=int, default=17)

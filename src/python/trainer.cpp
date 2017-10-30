@@ -284,8 +284,9 @@ namespace lbf {
 			assert(pixel_differences.rows == _num_features_to_sample && pixel_differences.cols == _num_augmented_data);
 			assert(sampled_feature_locations.size() == _num_features_to_sample);
 
-			int image_width = image.rows;
-			int image_height = image.cols;
+			int image_height = image.rows;
+			int image_width = image.cols;
+
 			double landmark_x = shape(landmark_index, 0);	// [-1, 1] : origin is the center of the image
 			double landmark_y = shape(landmark_index, 1);	// [-1, 1] : origin is the center of the image
 
@@ -305,14 +306,14 @@ namespace lbf {
 				int pixel_y_b = (image_height / 2.0) + local_y_b * (image_height / 2.0);
 
 				// clip bounds
-				pixel_x_a = std::max(0, std::min(pixel_x_a, image_width));
-				pixel_y_a = std::max(0, std::min(pixel_y_a, image_height));
-				pixel_x_b = std::max(0, std::min(pixel_x_b, image_width));
-				pixel_y_b = std::max(0, std::min(pixel_y_b, image_height));
+				pixel_x_a = std::max(0, std::min(pixel_x_a, image_width - 1));
+				pixel_y_a = std::max(0, std::min(pixel_y_a, image_height - 1));
+				pixel_x_b = std::max(0, std::min(pixel_x_b, image_width - 1));
+				pixel_y_b = std::max(0, std::min(pixel_y_b, image_height - 1));
 
 				// get pixel value
-				int luminosity_a = image(pixel_x_a, pixel_y_a);
-				int luminosity_b = image(pixel_x_b, pixel_y_b);
+				int luminosity_a = image(pixel_y_a, pixel_x_a);
+				int luminosity_b = image(pixel_y_b, pixel_x_b);
 
 				// pixel difference feature
 				int diff = luminosity_a - luminosity_b;
