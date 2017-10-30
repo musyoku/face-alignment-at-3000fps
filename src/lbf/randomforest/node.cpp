@@ -22,20 +22,29 @@ namespace lbf {
 			double minimum_score = 9999999999;
 			double selected_feature_index = -1;
 
+			// std::vector<int> pixel_differences_of_data;
+			// pixel_differences_of_data.reserve(data_indices.size());
+
+			std::vector<int> data_indices_vec;
+			for(int data_index: data_indices){
+				data_indices_vec.push_back(data_index);
+			}
+
 			for(int feature_index = 0;feature_index < num_features;feature_index++){
 				if(_selected_feature_indices_of_all_nodes.find(feature_index) != _selected_feature_indices_of_all_nodes.end()){
 					continue;
 				}
 				// select threshold
-				std::vector<int> pixel_differences_of_data;
-				pixel_differences_of_data.reserve(data_indices.size());
-
-				for(int data_index: data_indices){
-					pixel_differences_of_data.push_back(pixel_differences(feature_index, data_index));
-				}
-				std::sort(pixel_differences_of_data.begin(), pixel_differences_of_data.end());
-				int random_index = sampler::uniform_int(0, pixel_differences_of_data.size() * 0.9) + pixel_differences_of_data.size() * 0.05;
-				int tmp_threshold = pixel_differences_of_data[random_index];
+				// pixel_differences_of_data.clear();
+				// for(int data_index: data_indices){
+				// 	pixel_differences_of_data.push_back(pixel_differences(feature_index, data_index));
+				// }
+				// std::sort(pixel_differences_of_data.begin(), pixel_differences_of_data.end());
+				// int random_index = sampler::uniform_int(0, pixel_differences_of_data.size() * 0.9) + pixel_differences_of_data.size() * 0.05;
+				// int tmp_threshold = pixel_differences_of_data[random_index];
+				
+				int random_index = sampler::uniform_int(0, data_indices_vec.size() - 1);
+				int tmp_threshold = pixel_differences(feature_index, data_indices_vec[random_index]);
 
 				// calculate variance of target landmark positons
 				std::set<int> tmp_left_indices;

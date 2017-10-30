@@ -10,8 +10,8 @@ namespace lbf {
 		private:
 			int _num_features_to_sample;
 			int _num_augmented_data;
-			std::vector<cv::Mat1d> _augmented_estimated_shapes;
-			std::vector<cv::Mat1d> _augmented_target_shapes;
+			std::vector<cv::Mat1d> _augmented_estimated_shapes;		// contains normalized shape
+			std::vector<cv::Mat1d> _augmented_target_shapes;		// contains normalized shape
 			std::vector<int> _augmented_indices_to_data_index;
 			std::vector<std::vector<FeatureLocation>> _sampled_feature_locations_at_stage;
 			void _train_forest(int stage, int landmark_index);
@@ -29,7 +29,8 @@ namespace lbf {
 			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
 			void train();
 			void train_stage(int stage);
-			void train_local_binary_features_at_stage(int stage);
+			void train_local_feature_mapping_functions(int stage);
+			struct liblinear::feature_node** train_global_linear_regression_at_stage(int stage);
 			void evaluate_stage(int stage);
 			cv::Mat1d project_current_estimated_shape(int augmented_data_index);
 			boost::python::numpy::ndarray python_get_current_estimated_shape(int augmented_data_index, bool transform);

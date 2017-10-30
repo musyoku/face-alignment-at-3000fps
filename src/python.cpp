@@ -41,5 +41,5 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("evaluate_stage", &Trainer::evaluate_stage)
 	.def("train", &Trainer::train)
 	.def("train_stage", &Trainer::train_stage)
-	.def("train_local_binary_features_at_stage", &Trainer::train_local_binary_features_at_stage);
+	.def("train_local_feature_mapping_functions", &Trainer::train_local_feature_mapping_functions);
 }

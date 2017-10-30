@@ -42,9 +42,9 @@ namespace lbf {
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);
 			boost::python::list python_compute_error(boost::python::numpy::ndarray image_ndarray, 
-										boost::python::numpy::ndarray normalized_target_shape_ndarray, 
-										boost::python::numpy::ndarray rotation_inv_ndarray, 
-										boost::python::numpy::ndarray shift_inv_ndarray);
+													 boost::python::numpy::ndarray normalized_target_shape_ndarray, 
+													 boost::python::numpy::ndarray rotation_inv_ndarray, 
+													 boost::python::numpy::ndarray shift_inv_ndarray);
 			std::vector<double> compute_error(cv::Mat1b &image, 
 											  cv::Mat1d &target_shape, 
 											  cv::Mat1d &rotation_inv, 

@@ -215,10 +215,11 @@ def build_corpus(targets, mean_shape=None):
 
 	return corpus, mean_shape
 
-def imwrite(image_gray, shape, filename):
-	image_height = image_gray.shape[0]
-	image_width = image_gray.shape[1]
-	image_bgr = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
+def imwrite(image, shape, filename):
+	image_height = image.shape[0]
+	image_width = image.shape[1]
+	if image.ndim == 2:
+		image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 	color = (0, 255, 255)
 	for (x, y) in shape:
 		x = int(image_width / 2 + x * image_width / 2)

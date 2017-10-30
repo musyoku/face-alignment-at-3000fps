@@ -98,14 +98,50 @@ namespace lbf {
 		void Trainer::train_stage(int stage){
 			cout << "training stage: " << (stage + 1) << " of " << _model->_num_stages << endl;
 			
-			// train local binary feature
-			train_local_binary_features_at_stage(stage);
-			if (PyErr_CheckSignals() != 0) {
-				return;		
-			}
+			train_local_feature_mapping_functions(stage);
+			struct liblinear::feature_node** binary_features = train_global_linear_regression_at_stage(stage);
+
+			_model->finish_training_at_stage(stage);
 			
-			// train global linear regression
-			cout << "training global linear regression ..." << endl;
+			// predict shape
+			double average_error = 0;
+			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+
+				struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
+				struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
+
+				double error = 0;
+				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
+					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
+
+					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
+					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
+
+					double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
+					double delta_y = liblinear::predict(model_y, binary_features[augmented_data_index]);
+
+					// update shape
+					estimated_shape(landmark_index, 0) += delta_x;
+					estimated_shape(landmark_index, 1) += delta_y;
+
+					// compute error
+					double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
+					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
+					error += error_x * error_x + error_y * error_y;
+				}
+				error = std::sqrt(error);
+				average_error += error;
+			}
+			average_error /= _model->_num_landmarks * _num_augmented_data;
+			cout << "mean error: " << average_error << endl;
+
+			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+				delete[] binary_features[augmented_data_index];
+			}
+			delete[] binary_features;
+		}
+		struct liblinear::feature_node** Trainer::train_global_linear_regression_at_stage(int stage){
 			//// setup liblinear
 			int num_total_trees = 0;
 			int num_total_leaves = 0;
@@ -117,21 +153,15 @@ namespace lbf {
 			cout << "#trees = " << num_total_trees << endl;
 			cout << "#features = " << num_total_leaves << endl;
 			struct liblinear::feature_node** binary_features = new liblinear::feature_node*[_num_augmented_data];
-			// for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-			// 	binary_features[augmented_data_index] = new liblinear::feature_node[num_total_trees + 1];
-			// }
-			//// compute binary features
+
+			cout << "generating binary features ..." << endl;
 			#pragma omp parallel for
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 
 				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
-				cv::Mat1d estimated_shape = project_current_estimated_shape(augmented_data_index);
+				cv::Mat1d projected_shape = project_current_estimated_shape(augmented_data_index);
 
-				binary_features[augmented_data_index] = _model->compute_binary_features_at_stage(image, estimated_shape, stage);
-			}
-
-			if (PyErr_CheckSignals() != 0) {
-				return;		
+				binary_features[augmented_data_index] = _model->compute_binary_features_at_stage(image, projected_shape, stage);
 			}
 
 			struct liblinear::problem* problem = new struct liblinear::problem;
@@ -151,10 +181,9 @@ namespace lbf {
 			}
 
 			// train regressor
+			cout << "training global linear regressors ..." << endl;
 			#pragma omp parallel for
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-				cout << "." << flush;
-
 				// train x
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
@@ -163,7 +192,7 @@ namespace lbf {
 					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
 					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
 
-					double delta_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
+					double delta_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);	// normalized delta
 
 					targets[landmark_index][augmented_data_index] = delta_x;
 				}
@@ -179,7 +208,7 @@ namespace lbf {
 					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
 					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
 
-					double delta_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
+					double delta_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);	// normalized delta
 
 					targets[landmark_index][augmented_data_index] = delta_y;
 				}
@@ -188,58 +217,26 @@ namespace lbf {
 		        struct liblinear::model* model_y = liblinear::train(problem, parameter);
 
 		        _model->set_linear_models(model_x, model_y, stage, landmark_index);
+				cout << "." << flush;
 			}
 
 			cout << endl;
-
-			// predict shape
-			double average_error = 0;
-			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-
-				struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
-				struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
-
-				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
-					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
-
-					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
-					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
-
-					double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
-					double delta_y = liblinear::predict(model_y, binary_features[augmented_data_index]);
-
-					// update shape
-					estimated_shape(landmark_index, 0) += delta_x;
-					estimated_shape(landmark_index, 1) += delta_y;
-
-					// compute error
-					double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
-					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-					double error = std::sqrt(error_x * error_x + error_y * error_y);
-					average_error += error;
-				}
-			}
-			average_error /= _model->_num_landmarks * _num_augmented_data;
-			cout << "Error: " << average_error << endl;
-
-			_model->finish_training_at_stage(stage);
 
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 				delete[] targets[landmark_index];
 			}
 			delete[] targets;
-			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-				delete[] binary_features[augmented_data_index];
-			}
-			delete[] binary_features;
+
+			return binary_features;
 		}
-		void Trainer::train_local_binary_features_at_stage(int stage){
-			cout << "training local binary features ..." << endl;
+		void Trainer::train_local_feature_mapping_functions(int stage){
+			cout << "training local feature mapping functions ..." << endl;
 			#pragma omp parallel for
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 				_train_forest(stage, landmark_index);
+				cout << "." << flush;
 			}
+			cout << endl;
 		}
 		void Trainer::_train_forest(int stage, int landmark_index){
 			Corpus* corpus = _dataset->_training_corpus;
