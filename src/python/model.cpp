@@ -398,19 +398,21 @@ namespace lbf {
 		boost::python::list Model::python_compute_error(np::ndarray image_ndarray, 
 													    np::ndarray normalized_target_shape_ndarray, 
 													    np::ndarray rotation_inv_ndarray, 
-													    np::ndarray shift_inv_ndarray)
+													    np::ndarray shift_inv_ndarray,
+													    double normalized_pupil_distance)
 		{
 			cv::Mat1b image = utils::ndarray_matrix_to_cv_matrix<uchar>(image_ndarray);
 			cv::Mat1d target_shape = utils::ndarray_matrix_to_cv_matrix<double>(normalized_target_shape_ndarray);
 			cv::Mat1d rotation_inv = utils::ndarray_matrix_to_cv_matrix<double>(rotation_inv_ndarray);
 			cv::Mat1d shift_inv = utils::ndarray_vector_to_cv_matrix<double>(shift_inv_ndarray);
-			std::vector<double> error_at_stage = compute_error(image, target_shape, rotation_inv, shift_inv);
+			std::vector<double> error_at_stage = compute_error(image, target_shape, rotation_inv, shift_inv, normalized_pupil_distance);
 			return boost::python::vector_to_list(error_at_stage);
 		}
 		std::vector<double> Model::compute_error(cv::Mat1b &image, 
 												 cv::Mat1d &target_shape, 
 												 cv::Mat1d &rotation_inv, 
-												 cv::Mat1d &shift_inv)
+												 cv::Mat1d &shift_inv,
+												 double normalized_pupil_distance)
 		{
 			assert(target_shape.rows == _num_landmarks && target_shape.cols == 2);
 			assert(rotation_inv.rows == 2 && rotation_inv.cols == 2);
@@ -448,7 +450,7 @@ namespace lbf {
 					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
 					error += std::sqrt(error_x * error_x + error_y * error_y);
 				}
-				error_at_stage.push_back(error / _num_landmarks);
+				error_at_stage.push_back(error / _num_landmarks / normalized_pupil_distance * 100);
 				delete[] binary_features;
 			}
 			return error_at_stage;

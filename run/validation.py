@@ -231,17 +231,6 @@ def imwrite(image_gray, shape, filename):
 		
 		cv2.line(image_bgr, (x - 4, y), (x + 4, y), color, 1)
 		cv2.line(image_bgr, (x, y - 4), (x, y + 4), color, 1)
-
-	right_eye_center = np.sum(shape[37:39] + shape[40:42], axis=0) / 4
-	x = int(image_width / 2 + right_eye_center[0] * image_width / 2)
-	y = int(image_height / 2 + right_eye_center[1] * image_height / 2)
-	cv2.circle(image_bgr, (x, y), 10, (0, 0, 255), 1)
-
-	left_eye_center = np.sum(shape[43:45] + shape[46:48], axis=0) / 4
-	x = int(image_width / 2 + left_eye_center[0] * image_width / 2)
-	y = int(image_height / 2 + left_eye_center[1] * image_height / 2)
-	cv2.circle(image_bgr, (x, y), 10, (0, 0, 255), 1)
-
 	cv2.imwrite(os.path.join(args.debug_directory, filename), image_bgr)
 
 def main():
@@ -276,7 +265,7 @@ def main():
 	# training data
 	print("#", len(training_corpus))
 	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(training_corpus):
-		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv)
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv, pupil_distance)
 		print(error)
 		if args.debug_directory is not None:
 			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
@@ -286,7 +275,7 @@ def main():
 	# validation data
 	print("#", len(validation_corpus))
 	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(validation_corpus):
-		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv)
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv, pupil_distance)
 		print(error)
 		if args.debug_directory is not None:
 			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)

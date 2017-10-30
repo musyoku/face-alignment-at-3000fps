@@ -136,13 +136,12 @@ namespace lbf {
 
 					double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
 					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-					error += error_x * error_x + error_y * error_y;
+					error += std::sqrt(error_x * error_x + error_y * error_y);
 				}
-				error = std::sqrt(error);
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
 				double pupil_distance = _dataset->_training_corpus->get_normalized_pupil_distance(data_index);
 				assert(pupil_distance > 0);
-				average_error += error / pupil_distance * 100;
+				average_error += error / _model->_num_landmarks / pupil_distance * 100;
 			}
 
 			average_error /= _num_augmented_data;
@@ -507,13 +506,11 @@ namespace lbf {
 						// compute error
 						double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
 						double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-						error += error_x * error_x + error_y * error_y;
+						error += std::sqrt(error_x * error_x + error_y * error_y);
 					}
-					error = std::sqrt(error);
-
 					double pupil_distance = corpus->get_normalized_pupil_distance(data_index);
 					assert(pupil_distance > 0);
-					average_error += error / pupil_distance * 100;
+					average_error += error / _model->_num_landmarks / pupil_distance * 100;
 
 					delete[] binary_features;
 				}

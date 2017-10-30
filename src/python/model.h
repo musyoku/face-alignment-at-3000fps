@@ -44,11 +44,13 @@ namespace lbf {
 			boost::python::list python_compute_error(boost::python::numpy::ndarray image_ndarray, 
 													 boost::python::numpy::ndarray normalized_target_shape_ndarray, 
 													 boost::python::numpy::ndarray rotation_inv_ndarray, 
-													 boost::python::numpy::ndarray shift_inv_ndarray);
+													 boost::python::numpy::ndarray shift_inv_ndarray,
+													 double normalized_pupil_distance);
 			std::vector<double> compute_error(cv::Mat1b &image, 
 											  cv::Mat1d &target_shape, 
 											  cv::Mat1d &rotation_inv, 
-											  cv::Mat1d &shift_inv);
+											  cv::Mat1d &shift_inv,
+											  double normalized_pupil_distance);
 			boost::python::numpy::ndarray python_estimate_shape(boost::python::numpy::ndarray image_ndarray);
 			boost::python::numpy::ndarray python_estimate_shape_using_initial_shape(boost::python::numpy::ndarray image_ndarray,
 																					boost::python::numpy::ndarray initial_shape_ndarray);
