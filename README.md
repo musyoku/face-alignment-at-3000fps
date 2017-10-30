@@ -73,7 +73,7 @@ or from Google Drive.
 - [lfpw.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRTUhuMnExdDlBRFk)
 - [helen.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRazF3MGU0enZkSVk)
 
-.
+```
 +-- afw
 |   +-- 134212_1.jpg
 |   +-- 134212_1.pts
@@ -100,3 +100,4 @@ or from Google Drive.
         +-- image_0001.jpg
         +-- image_0001.pts
         +-- ...
+```
