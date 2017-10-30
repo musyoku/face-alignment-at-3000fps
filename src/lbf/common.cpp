@@ -88,7 +88,7 @@ namespace lbf {
 		template <typename T>
 		np::ndarray cv_matrix_to_ndarray_matrix(cv::Mat_<T> &cv_matrix){
 			boost::python::tuple size = boost::python::make_tuple(cv_matrix.rows, cv_matrix.cols);
-			np::ndarray ndarray = np::zeros(size, np::dtype::get_builtin<double>());
+			np::ndarray ndarray = np::zeros(size, np::dtype::get_builtin<T>());
 			for(int h = 0;h < cv_matrix.rows;h++) {
 				for(int w = 0;w < cv_matrix.cols;w++) {
 					ndarray[h][w] = cv_matrix(h, w);

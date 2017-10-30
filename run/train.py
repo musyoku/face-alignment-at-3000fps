@@ -225,10 +225,10 @@ def imwrite(image, shape, filename):
 		x = int(image_width / 2 + x * image_width / 2)
 		y = int(image_height / 2 + y * image_height / 2)
 		
-		cv2.line(image_bgr, (x - 4, y), (x + 4, y), color, 1)
-		cv2.line(image_bgr, (x, y - 4), (x, y + 4), color, 1)
+		cv2.line(image, (x - 4, y), (x + 4, y), color, 1)
+		cv2.line(image, (x, y - 4), (x, y + 4), color, 1)
 
-	cv2.imwrite(os.path.join(args.debug_directory, filename), image_bgr)
+	cv2.imwrite(os.path.join(args.debug_directory, filename), image)
 
 def main():
 	assert args.dataset_directory is not None
@@ -302,12 +302,15 @@ def main():
 			target = training_corpus.get_normalized_shape(data_index)
 			rotation_inv = training_corpus.get_rotation_inv(data_index)
 			shift_inv = training_corpus.get_shift_inv(data_index)
+
 			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
 			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
 			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_true_train_{}.jpg".format(data_index)))
+
 			shape = _model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
 			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
 			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
+			
 			error = model.compute_error(image, target, rotation_inv, shift_inv)
 			_error = _model.compute_error(image, target, rotation_inv, shift_inv)
 			print(error, _error)
