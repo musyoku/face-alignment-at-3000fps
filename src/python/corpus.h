@@ -18,13 +18,15 @@ namespace lbf {
 			std::vector<cv::Mat1d> _rotation_inv;
 			std::vector<cv::Point2d> _shift;
 			std::vector<cv::Point2d> _shift_inv;
+			std::vector<double> _normalized_pupil_distances;
 			void add(boost::python::numpy::ndarray image_ndarray, 
 					 boost::python::numpy::ndarray shape_ndarray, 
 					 boost::python::numpy::ndarray normalized_shape_ndarray,
 					 boost::python::numpy::ndarray rotation,
 					 boost::python::numpy::ndarray rotation_inv,
 					 boost::python::numpy::ndarray shift,
-					 boost::python::numpy::ndarray shift_inv);
+					 boost::python::numpy::ndarray shift_inv,
+					 double normalized_pupil_distance);
 			int get_num_images();
 			cv::Mat1d & get_original_shape(int data_index);
 			cv::Mat1d & get_normalized_shape(int data_index);
@@ -33,6 +35,7 @@ namespace lbf {
 			cv::Mat1d & get_rotation_inv(int data_index);
 			cv::Point2d & get_shift(int data_index);
 			cv::Point2d & get_shift_inv(int data_index);
+			double get_normalized_pupil_distance(int data_index);
 			boost::python::numpy::ndarray python_get_image(int data_index);
 			boost::python::numpy::ndarray python_get_normalized_shape(int data_index);
 			boost::python::numpy::ndarray python_get_rotation_inv(int data_index);

@@ -104,18 +104,13 @@ namespace lbf {
 			_model->finish_training_at_stage(stage);
 			
 			// predict shape
-			double average_error = 0;
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 
 				struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
 				struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
 
-				double error = 0;
 				for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
 					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
-
-					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
 					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
 
 					double delta_x = liblinear::predict(model_x, binary_features[augmented_data_index]);
@@ -124,17 +119,34 @@ namespace lbf {
 					// update shape
 					estimated_shape(landmark_index, 0) += delta_x;
 					estimated_shape(landmark_index, 1) += delta_y;
+				}
+			}
 
-					// compute error
+			// compute error
+			double average_error = 0;	// %
+			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+				double error = 0;
+
+				for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
+					cv::Mat1d &target_shape = _augmented_target_shapes[augmented_data_index];
+					cv::Mat1d &estimated_shape = _augmented_estimated_shapes[augmented_data_index];
+
+					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
+					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
+
 					double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
 					double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
 					error += error_x * error_x + error_y * error_y;
 				}
 				error = std::sqrt(error);
-				average_error += error;
+				int data_index = _augmented_indices_to_data_index[augmented_data_index];
+				double pupil_distance = _dataset->_training_corpus->get_normalized_pupil_distance(data_index);
+				assert(pupil_distance > 0);
+				average_error += error / pupil_distance * 100;
 			}
-			average_error /= _model->_num_landmarks * _num_augmented_data;
-			cout << "mean error: " << average_error << endl;
+
+			average_error /= _num_augmented_data;
+			cout << "mean error: " << average_error << " %" << endl;
 
 			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
 				delete[] binary_features[augmented_data_index];
@@ -453,17 +465,19 @@ namespace lbf {
 
 			Corpus* corpus = _dataset->_validation_corpus;
 			int num_data = corpus->get_num_images();
-			double average_error = 0;
-			
+			std::vector<double> average_error_at_stage(target_stage + 1);
 
-			for(int data_index = 0;data_index < num_data;data_index++){
+			for(int stage = 0;stage <= target_stage;stage++){
+				double average_error = 0;
 
-				cv::Mat1b &image = corpus->get_image(data_index);
-				cv::Mat1d estimated_shape = _model->_mean_shape.clone();
-				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-				cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
+				for(int data_index = 0;data_index < num_data;data_index++){
+					cv::Mat1b &image = corpus->get_image(data_index);
+					cv::Mat1d estimated_shape = _model->_mean_shape.clone();
+					cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
+					cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
 
-				for(int stage = 0;stage <= target_stage;stage++){
+					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
+					assert(rotation_inv.rows == 2 && rotation_inv.cols == 2);
 					assert(_model->_training_finished_at_stage[stage] == true);
 
 					// unnormalize initial shape
@@ -471,8 +485,9 @@ namespace lbf {
 
 					// compute binary features
 					struct liblinear::feature_node* binary_features = _model->compute_binary_features_at_stage(image, unnormalized_estimated_shape, stage);
-
 					cv::Mat1d &target_shape = corpus->get_normalized_shape(data_index);
+					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
+					double error = 0;
 
 					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 
@@ -492,16 +507,23 @@ namespace lbf {
 						// compute error
 						double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
 						double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-						double error = std::sqrt(error_x * error_x + error_y * error_y);
-						average_error += error;
+						error += error_x * error_x + error_y * error_y;
 					}
+					error = std::sqrt(error);
 
+					double pupil_distance = corpus->get_normalized_pupil_distance(data_index);
+					assert(pupil_distance > 0);
+					average_error += error / pupil_distance * 100;
 
 					delete[] binary_features;
 				}
+	
+				average_error_at_stage[stage] = average_error / num_data;				
 			}
-			average_error /= _model->_num_landmarks * num_data;
-			std::cout << "validation error: " << average_error << std::endl;
+			std::cout << "validation error: " << std::endl;
+			for(int stage = 0;stage < average_error_at_stage.size();stage++){
+				std::cout << "	stage " << stage << ": " << average_error_at_stage[stage] << " %" << std::endl;
+			}
 		}
 	}
 }

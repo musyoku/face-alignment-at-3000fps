@@ -211,7 +211,12 @@ def build_corpus(targets, mean_shape=None):
 		rotation_inv = mat[:, :2]
 		shift_inv = mat[:, 2]
 
-		corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv)
+		# compute normalized inter-pupil distance
+		right_eye_center = np.sum(shape[37:39] + shape[40:42], axis=0) / 4
+		left_eye_center = np.sum(shape[43:45] + shape[46:48], axis=0) / 4
+		pupil_distance = np.sqrt(np.sum((right_eye_center - left_eye_center) ** 2))
+
+		corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance)
 
 	return corpus, mean_shape
 
@@ -291,29 +296,30 @@ def main():
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)
-		model.save(args.model_filename)
 		trainer.evaluate_stage(stage)
 
+		model.save(args.model_filename)
+
 		# training data
-		print("#", training_corpus.get_num_images())
-		_model = lbf.model(args.model_filename)
-		for data_index in range(min(50, training_corpus.get_num_images())):
-			image = training_corpus.get_image(data_index)
-			target = training_corpus.get_normalized_shape(data_index)
-			rotation_inv = training_corpus.get_rotation_inv(data_index)
-			shift_inv = training_corpus.get_shift_inv(data_index)
+		# print("#", training_corpus.get_num_images())
+		# _model = lbf.model(args.model_filename)
+		# for data_index in range(min(50, training_corpus.get_num_images())):
+		# 	image = training_corpus.get_image(data_index)
+		# 	target = training_corpus.get_normalized_shape(data_index)
+		# 	rotation_inv = training_corpus.get_rotation_inv(data_index)
+		# 	shift_inv = training_corpus.get_shift_inv(data_index)
 
-			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
-			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
-			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_true_train_{}.jpg".format(data_index)))
+		# 	shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+		# 	shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+		# 	imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_true_train_{}.jpg".format(data_index)))
 
-			shape = _model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
-			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
-			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
+		# 	shape = _model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+		# 	shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+		# 	imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
 
-			error = model.compute_error(image, target, rotation_inv, shift_inv)
-			_error = _model.compute_error(image, target, rotation_inv, shift_inv)
-			print(error, _error)
+		# 	error = model.compute_error(image, target, rotation_inv, shift_inv)
+		# 	_error = _model.compute_error(image, target, rotation_inv, shift_inv)
+		# 	print(error, _error)
 
 
 		# debug

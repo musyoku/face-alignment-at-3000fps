@@ -13,7 +13,8 @@ namespace lbf {
 						 np::ndarray rotation,
 						 np::ndarray rotation_inv,
 						 np::ndarray shift,
-						 np::ndarray shift_inv)
+						 np::ndarray shift_inv,
+					 	 double normalized_pupil_distance)
 		{
 			_add_ndarray_matrix_to(image_ndarray, _images);
 			_add_ndarray_matrix_to(shape_ndarray, _shapes);
@@ -23,10 +24,13 @@ namespace lbf {
 			_add_ndarray_point_to(shift, _shift);
 			_add_ndarray_point_to(shift_inv, _shift_inv);
 
+			_normalized_pupil_distances.push_back(normalized_pupil_distance);
+
 			assert(_images.size() == _shift.size());
 			assert(_images.size() == _normalized_shapes.size());
 			assert(_images.size() == _rotation.size());
 			assert(_images.size() == _rotation_inv.size());
+			assert(_images.size() == _normalized_pupil_distances.size());
 		}
 		template <typename T>
 		void Corpus::_add_ndarray_matrix_to(np::ndarray &array, std::vector<cv::Mat_<T>> &corpus){
@@ -94,6 +98,10 @@ namespace lbf {
 		cv::Point2d & Corpus::get_shift_inv(int data_index){
 			assert(data_index < _shift_inv.size());
 			return _shift_inv[data_index];
+		}
+		double Corpus::get_normalized_pupil_distance(int data_index){
+			assert(data_index < _normalized_pupil_distances.size());
+			return _normalized_pupil_distances[data_index];
 		}
 		np::ndarray Corpus::python_get_shift_inv(int data_index){
 			assert(data_index < _images.size());

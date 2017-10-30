@@ -211,7 +211,12 @@ def build_corpus(targets, mean_shape=None):
 		rotation_inv = mat[:, :2]
 		shift_inv = mat[:, 2]
 
-		corpus.append((image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv))
+		# compute normalized inter-pupil distance
+		right_eye_center = np.sum(shape[37:39] + shape[40:42], axis=0) / 4
+		left_eye_center = np.sum(shape[43:45] + shape[46:48], axis=0) / 4
+		pupil_distance = np.sqrt(np.sum((right_eye_center - left_eye_center) ** 2))
+
+		corpus.append((image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance))
 
 	return corpus, mean_shape
 
@@ -220,12 +225,22 @@ def imwrite(image_gray, shape, filename):
 	image_width = image_gray.shape[1]
 	image_bgr = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
 	color = (0, 255, 255)
-	for (x, y) in shape:
+	for i, (x, y) in enumerate(shape):
 		x = int(image_width / 2 + x * image_width / 2)
 		y = int(image_height / 2 + y * image_height / 2)
 		
 		cv2.line(image_bgr, (x - 4, y), (x + 4, y), color, 1)
 		cv2.line(image_bgr, (x, y - 4), (x, y + 4), color, 1)
+
+	right_eye_center = np.sum(shape[37:39] + shape[40:42], axis=0) / 4
+	x = int(image_width / 2 + right_eye_center[0] * image_width / 2)
+	y = int(image_height / 2 + right_eye_center[1] * image_height / 2)
+	cv2.circle(image_bgr, (x, y), 10, (0, 0, 255), 1)
+
+	left_eye_center = np.sum(shape[43:45] + shape[46:48], axis=0) / 4
+	x = int(image_width / 2 + left_eye_center[0] * image_width / 2)
+	y = int(image_height / 2 + left_eye_center[1] * image_height / 2)
+	cv2.circle(image_bgr, (x, y), 10, (0, 0, 255), 1)
 
 	cv2.imwrite(os.path.join(args.debug_directory, filename), image_bgr)
 
@@ -260,21 +275,23 @@ def main():
 
 	# training data
 	print("#", len(training_corpus))
-	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in enumerate(training_corpus):
-		error = model.compute_error(image, shape, rotation_inv, shift_inv)
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(training_corpus):
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv)
 		print(error)
-		shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
-		shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
-		imwrite(image.copy(), shape, os.path.join(args.debug_directory, "train_{}.jpg".format(data_index)))
+		if args.debug_directory is not None:
+			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "train_{}.jpg".format(data_index)))
 
 	# validation data
 	print("#", len(validation_corpus))
-	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv) in enumerate(validation_corpus):
-		error = model.compute_error(image, shape, rotation_inv, shift_inv)
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(validation_corpus):
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv)
 		print(error)
-		shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
-		shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
-		imwrite(image.copy(), shape, os.path.join(args.debug_directory, "validation_{}.jpg".format(data_index)))
+		if args.debug_directory is not None:
+			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "validation_{}.jpg".format(data_index)))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
