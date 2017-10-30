@@ -62,10 +62,6 @@ pip install dlib --user
 
 ## Datasets
 
-###  300 Faces in the Wild
-
-Download `300w.zip.001`, `300w.zip.002`, `300w.zip.003`, `300w.zip.004` from [ibug.doc.ic.ac.uk/resources/facial-point-annotations/](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
-
 ### IBUG
 
 Download `afw.zip`, `ibug.zip`, `lfpw.zip`, `helen.zip` from [ibug.doc.ic.ac.uk/resources/facial-point-annotations/](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
@@ -76,3 +72,31 @@ or from Google Drive.
 - [ibug.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRR2dMd29Lakt0UDg)
 - [lfpw.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRTUhuMnExdDlBRFk)
 - [helen.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRazF3MGU0enZkSVk)
+
+.
++-- afw
+|   +-- 134212_1.jpg
+|   +-- 134212_1.pts
+|   +-- ...
++-- helen
+|   +-- trainset
+|   |   +-- 232194_1.jpg
+|   |   +-- 232194_1.pts
+|   |   +-- ...
+|   +-- testset
+|       +-- 232194_1.jpg
+|       +-- 232194_1.pts
+|       +-- ...
++-- ibug
+|   +-- image_003_1.jpg
+|   +-- image_003_1.pts
+|   +-- ...
++-- lfpw
+    +-- trainset
+    |   +-- image_0001.jpg
+    |   +-- image_0001.pts
+    |   +-- ...
+    +-- testset
+        +-- image_0001.jpg
+        +-- image_0001.pts
+        +-- ...

@@ -308,6 +308,7 @@ def main():
 		# 	target = training_corpus.get_normalized_shape(data_index)
 		# 	rotation_inv = training_corpus.get_rotation_inv(data_index)
 		# 	shift_inv = training_corpus.get_shift_inv(data_index)
+		# 	pupil_distance = training_corpus.get_normalized_pupil_distance(data_index)
 
 		# 	shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
 		# 	shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
@@ -317,8 +318,8 @@ def main():
 		# 	shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
 		# 	imwrite(image.copy(), shape, os.path.join(args.debug_directory, "_m_load_train_{}.jpg".format(data_index)))
 
-		# 	error = model.compute_error(image, target, rotation_inv, shift_inv)
-		# 	_error = _model.compute_error(image, target, rotation_inv, shift_inv)
+		# 	error = model.compute_error(image, target, rotation_inv, shift_inv, pupil_distance)
+		# 	_error = _model.compute_error(image, target, rotation_inv, shift_inv, pupil_distance)
 		# 	print(error, _error)
 
 

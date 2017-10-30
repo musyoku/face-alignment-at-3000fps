@@ -18,6 +18,7 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("get_normalized_shape", &Corpus::python_get_normalized_shape)
 	.def("get_rotation_inv", &Corpus::python_get_rotation_inv)
 	.def("get_shift_inv", &Corpus::python_get_shift_inv)
+	.def("get_normalized_pupil_distance", &Corpus::get_normalized_pupil_distance)
 	.def("add", &Corpus::add);
 
 	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, int>((args("training_corpus", "validation_corpus", "augmentation_size"))))
