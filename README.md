@@ -74,30 +74,30 @@ or from Google Drive.
 - [helen.zip](https://drive.google.com/open?id=0ByQaxyG1S5JRazF3MGU0enZkSVk)
 
 ```
-+-- afw
-|   +-- 134212_1.jpg
-|   +-- 134212_1.pts
-|   +-- ...
-+-- helen
-|   +-- trainset
-|   |   +-- 232194_1.jpg
-|   |   +-- 232194_1.pts
-|   |   +-- ...
-|   +-- testset
-|       +-- 232194_1.jpg
-|       +-- 232194_1.pts
-|       +-- ...
-+-- ibug
-|   +-- image_003_1.jpg
-|   +-- image_003_1.pts
-|   +-- ...
-+-- lfpw
-    +-- trainset
-    |   +-- image_0001.jpg
-    |   +-- image_0001.pts
-    |   +-- ...
-    +-- testset
-        +-- image_0001.jpg
-        +-- image_0001.pts
-        +-- ...
+┣━━ afw
+┃      ┣━━ 134212_1.jpg
+┃      ┣━━ 134212_1.pts
+┃             ...
+┣━━ helen
+┃      ┣━━ trainset
+┃      ┃      ┣━━ 232194_1.jpg
+┃      ┃      ┣━━ 232194_1.pts
+┃      ┃             ...
+┃      ┗━━ testset
+┃              ┣━━ 232194_1.jpg
+┃              ┣━━ 232194_1.pts
+┃                     ...
+┣━━ ibug
+┃      ┣━━ image_003_1.jpg
+┃      ┣━━ image_003_1.pts
+┃             ...
+┗━━ lfpw
+        ┣━━ trainset
+        ┃      ┣━━ image_0001.jpg
+        ┃      ┣━━ image_0001.pts
+        ┃             ...
+        ┗━━ testset
+                ┣━━ image_0001.jpg
+                ┣━━ image_0001.pts
+                       ...
 ```
