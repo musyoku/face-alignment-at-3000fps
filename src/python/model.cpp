@@ -22,6 +22,23 @@ namespace lbf {
 		Model::Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, np::ndarray mean_shape_ndarray, std::vector<double> &feature_radius){
 			_init(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
 		}
+		Model::~Model(){
+			for(auto &forests: _forest_at_stage){
+				for(auto forest: forests){
+					delete forest;
+				}
+			}
+			for(auto &linear_models: _linear_models_x_at_stage){
+				for(auto model: linear_models){
+					delete model;
+				}
+			}
+			for(auto &linear_models: _linear_models_y_at_stage){
+				for(auto model: linear_models){
+					delete model;
+				}
+			}
+		}
 		void Model::_init(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, np::ndarray &mean_shape_ndarray, std::vector<double> &feature_radius){
 			_num_stages = num_stages;
 			_num_trees_per_forest = num_trees_per_forest;
@@ -80,6 +97,14 @@ namespace lbf {
 		void Model::finish_training_at_stage(int stage){
 			assert(stage < _num_stages);
 			_training_finished_at_stage[stage] = true;
+			release_training_data_at_stage(stage);
+		}
+		void Model::release_training_data_at_stage(int stage){
+			for(auto &forests: _forest_at_stage){
+				for(auto forest: forests){
+					forest->release_training_data();
+				}
+			}
 		}
 		Forest* Model::get_forest(int stage, int landmark_index){
 			assert(stage < _num_stages);

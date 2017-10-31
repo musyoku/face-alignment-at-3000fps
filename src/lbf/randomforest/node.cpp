@@ -151,6 +151,17 @@ namespace lbf {
 			_assigned_data_indices = data_indices;
 			_update_delta_shape(regression_targets);
 		}
+		void Node::release_training_data(){
+			_left_indices.clear();
+			_right_indices.clear();
+			_assigned_data_indices.clear();
+			if(_left != NULL){
+				_left->release_training_data();
+			}
+			if(_right != NULL){
+				_right->release_training_data();
+			}
+		}
 		template <class Archive>
 		void Node::serialize(Archive &ar, unsigned int version){
 			ar & _depth;

@@ -34,6 +34,7 @@ namespace lbf {
 							cv::Mat_<int> &pixel_differences, 
 							std::vector<cv::Mat1d> &regression_targets);
 			int get_num_leaves();
+			void release_training_data();
 			Node* predict(cv::Mat1d &shape, cv::Mat1b &image);
 		};
 	}

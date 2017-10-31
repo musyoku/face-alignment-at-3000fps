@@ -34,11 +34,13 @@ namespace lbf {
 			Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, boost::python::numpy::ndarray mean_shape_ndarray, boost::python::list feature_radius);
 			Model(int num_stages, int num_trees_per_forest, int tree_depth, int num_landmarks, boost::python::numpy::ndarray mean_shape_ndarray, std::vector<double> &feature_radius);
 			Model(std::string filename);
+			~Model();
 			randomforest::Forest* get_forest(int stage, int landmark_index);
 			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);
 			void finish_training_at_stage(int stage);
+			void release_training_data_at_stage(int stage);
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);
 			boost::python::list python_compute_error(boost::python::numpy::ndarray image_ndarray, 

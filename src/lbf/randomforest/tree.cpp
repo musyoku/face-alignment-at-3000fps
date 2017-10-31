@@ -57,6 +57,9 @@ namespace lbf {
 		int Tree::get_num_leaves(){
 			return _num_leaves;
 		}
+		void Tree::release_training_data(){
+			_root->release_training_data();
+		}
 		Node* Tree::predict(cv::Mat1d &shape, cv::Mat1b &image){
 			int image_height = image.rows;
 			int image_width = image.cols;
