@@ -28,6 +28,7 @@ namespace lbf {
 			Node* _right;
 			Tree* _tree;
 			Node(){};
+			~Node();
 			Node(int depth, int landmark_index, Tree* tree){
 				_left = NULL;
 				_right = NULL;

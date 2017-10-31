@@ -10,6 +10,14 @@ using std::endl;
 
 namespace lbf {
 	namespace randomforest {
+		Node::~Node(){
+			if(_left != NULL){
+				delete _left;
+			}
+			if(_right != NULL){
+				delete _right;
+			}
+		}
 		bool Node::split(std::set<int> &data_indices,
 						 std::vector<FeatureLocation> &sampled_feature_locations, 
 						 cv::Mat_<int> &pixel_differences, 

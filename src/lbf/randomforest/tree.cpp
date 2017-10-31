@@ -14,7 +14,7 @@ namespace lbf {
 			_forest = forest;
 		}
 		Tree::~Tree(){
-
+			delete _root;
 		}
 		void Tree::train(std::set<int> &data_indices,
 						 std::vector<FeatureLocation> &sampled_feature_locations, 

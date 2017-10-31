@@ -21,6 +21,11 @@ namespace lbf {
 				_trees.push_back(tree);
 			}
 		}
+		Forest::~Forest(){
+			for(Tree* tree: _trees){
+				delete tree;
+			}
+		}
 		void Forest::train(std::vector<FeatureLocation> &feature_locations, 
 						   cv::Mat_<int> &pixel_differences, 
 						   std::vector<cv::Mat1d> &regression_targets)

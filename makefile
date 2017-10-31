@@ -21,6 +21,7 @@ module_tests: ## 各モジュールのテスト.
 	./test/module_tests/randomforest/forest
 
 running_tests:	## 学習テスト
+	$(CC) test/running_tests/memory.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c -o test/running_tests/memory $(INCLUDE) $(LDFLAGS) -O3 -fopenmp -Wno-deprecated
 	$(CC) test/running_tests/save.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c -o test/running_tests/save $(INCLUDE) $(LDFLAGS) -O3 -fopenmp -Wno-deprecated
 	$(CC) test/running_tests/validation.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c -o test/running_tests/validation $(INCLUDE) $(LDFLAGS) -O0 -g -fopenmp -Wno-deprecated
 	$(CC) test/running_tests/train.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c -o test/running_tests/train $(INCLUDE) $(LDFLAGS) -O3 -fopenmp -Wno-deprecated

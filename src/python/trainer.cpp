@@ -237,6 +237,8 @@ namespace lbf {
 				delete[] targets[landmark_index];
 			}
 			delete[] targets;
+			delete problem;
+			delete parameter;
 
 			return binary_features;
 		}
