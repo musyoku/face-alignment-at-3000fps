@@ -28,7 +28,6 @@ namespace lbf {
 			Tree* get_tree_at(int tree_index);
 			int get_num_trees();
 			int get_num_total_leaves();
-			void release_training_data();
 		};
 	}
 }

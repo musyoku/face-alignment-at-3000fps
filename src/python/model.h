@@ -40,7 +40,6 @@ namespace lbf {
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);
 			void finish_training_at_stage(int stage);
-			void release_training_data_at_stage(int stage);
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);
 			boost::python::list python_compute_error(boost::python::numpy::ndarray image_ndarray, 

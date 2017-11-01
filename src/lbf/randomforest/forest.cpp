@@ -71,11 +71,6 @@ namespace lbf {
 		int Forest::get_num_total_leaves(){
 			return _num_total_leaves;
 		}
-		void Forest::release_training_data(){
-			for(auto tree: _trees){
-				tree->release_training_data();				
-			}
-		}
 		template <class Archive>
 		void Forest::serialize(Archive &ar, unsigned int version){
 			ar & _stage;

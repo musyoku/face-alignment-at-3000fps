@@ -97,14 +97,6 @@ namespace lbf {
 		void Model::finish_training_at_stage(int stage){
 			assert(stage < _num_stages);
 			_training_finished_at_stage[stage] = true;
-			release_training_data_at_stage(stage);
-		}
-		void Model::release_training_data_at_stage(int stage){
-			for(auto &forests: _forest_at_stage){
-				for(auto forest: forests){
-					forest->release_training_data();
-				}
-			}
 		}
 		Forest* Model::get_forest(int stage, int landmark_index){
 			assert(stage < _num_stages);

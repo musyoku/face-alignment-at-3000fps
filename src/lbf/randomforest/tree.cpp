@@ -23,6 +23,7 @@ namespace lbf {
 		{
 			assert(data_indices.size() > 0);
 			split_node(_root, data_indices, sampled_feature_locations, pixel_differences, regression_targets);
+			_root->release_training_data();
 		}
 		void Tree::split_node(Node* node, 
 							  std::set<int> &data_indices,
@@ -56,9 +57,6 @@ namespace lbf {
 		}
 		int Tree::get_num_leaves(){
 			return _num_leaves;
-		}
-		void Tree::release_training_data(){
-			_root->release_training_data();
 		}
 		Node* Tree::predict(cv::Mat1d &shape, cv::Mat1b &image){
 			int image_height = image.rows;

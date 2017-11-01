@@ -250,7 +250,6 @@ namespace lbf {
 				cout << "." << flush;
 			}
 			cout << endl;
-			_model->release_training_data_at_stage(stage);
 		}
 		void Trainer::_train_forest(int stage, int landmark_index){
 			Corpus* corpus = _dataset->_training_corpus;
