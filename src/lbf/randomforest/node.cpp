@@ -29,6 +29,8 @@ namespace lbf {
 			assert(num_features > 0);
 			double minimum_score = 9999999999;
 			double selected_feature_index = -1;
+			assert(_left_indices.size() == 0);
+			assert(_right_indices.size() == 0);
 
 			// std::vector<int> pixel_differences_of_data;
 			// pixel_differences_of_data.reserve(data_indices.size());
@@ -55,8 +57,10 @@ namespace lbf {
 				int tmp_threshold = pixel_differences(feature_index, data_indices_vec[random_index]);
 
 				// calculate variance of target landmark positons
-				std::set<int> tmp_left_indices;
-				std::set<int> tmp_right_indices;
+				// std::set<int> tmp_left_indices;
+				// std::set<int> tmp_right_indices;
+				int num_left = 0;
+				int num_right = 0;
 				cv::Point2d squared_mean_left(0, 0);
 				cv::Point2d squared_mean_right(0, 0);
 				cv::Point2d mean_left(0, 0);
@@ -74,7 +78,8 @@ namespace lbf {
 						mean_left.x += target_x;
 						squared_mean_left.y += target_y * target_y;
 						mean_left.y += target_y;
-						tmp_left_indices.insert(data_index);
+						num_left += 1;
+						// tmp_left_indices.insert(data_index);
 						continue;
 					}
 
@@ -83,26 +88,29 @@ namespace lbf {
 					mean_right.x += target_x;
 					squared_mean_right.y += target_y * target_y;
 					mean_right.y += target_y;
-					tmp_right_indices.insert(data_index);
+					num_right += 1;
+					// tmp_right_indices.insert(data_index);
 				}
+
+				assert(num_right + num_left == data_indices.size());
 
 				// compute variance
 				double var_left = 0;
-				if(tmp_left_indices.size() > 0){
-					squared_mean_left /= (double)tmp_left_indices.size();
-					mean_left /= (double)tmp_left_indices.size();
+				if(num_left > 0){
+					squared_mean_left /= (double)num_left;
+					mean_left /= (double)num_left;
 					var_left = squared_mean_left.x - mean_left.x * mean_left.x + squared_mean_left.y - mean_left.y * mean_left.y;
 				}
 				double var_right = 0;
-				if(tmp_right_indices.size() > 0){
-					squared_mean_right /= (double)tmp_right_indices.size();
-					mean_right /= (double)tmp_right_indices.size();
+				if(num_right > 0){
+					squared_mean_right /= (double)num_right;
+					mean_right /= (double)num_right;
 					var_right = squared_mean_right.x - mean_right.x * mean_right.x + squared_mean_right.y - mean_right.y * mean_right.y;
 				}
 
 				// compute score
-				double sum_squared_error_left = var_left * tmp_left_indices.size();
-				double sum_squared_error_right = var_right * tmp_right_indices.size();
+				double sum_squared_error_left = var_left * num_left;
+				double sum_squared_error_right = var_right * num_right;
 				double score = sum_squared_error_left + sum_squared_error_right;
 
 				// cout << "var_left = " << var_left << ", " << "var_right = " << var_right << endl;
@@ -110,8 +118,8 @@ namespace lbf {
 				if(score < minimum_score){
 					minimum_score = score;
 					selected_feature_index = feature_index;
-					_left_indices = tmp_left_indices;
-					_right_indices = tmp_right_indices;
+					// _left_indices = tmp_left_indices;
+					// _right_indices = tmp_right_indices;
 					_pixel_difference_threshold = tmp_threshold;
 					_feature_location = sampled_feature_locations[selected_feature_index];
 				}
@@ -121,6 +129,17 @@ namespace lbf {
 			// cout << _left_indices.size() << " : " << _right_indices.size() << endl;
 			assert(selected_feature_index != -1);
 			_selected_feature_indices_of_all_nodes.insert(selected_feature_index);
+
+
+			for(int data_index: data_indices){
+				int pixel_difference = pixel_differences(selected_feature_index, data_index);
+				if(pixel_difference < _pixel_difference_threshold){
+					_left_indices.insert(data_index);
+					continue;
+				}
+				_right_indices.insert(data_index);
+			}
+
 
 			if(_left_indices.size() == 0 || _right_indices.size() == 0){
 				return false;
