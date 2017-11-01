@@ -10,8 +10,9 @@ namespace lbf {
 		class Forest;
 		class Tree {
 		private:
-			Node* _root;
 			Forest* _forest;
+			Node* _root;
+			int _max_depth;
 			int _autoincrement_leaf_index;
 			int _num_leaves;
 			int _landmark_index;
@@ -20,7 +21,6 @@ namespace lbf {
 			template <class Archive>
 			void serialize(Archive &ar, unsigned int version);
 		public:
-			int _max_depth;
 			Tree(){};
 			~Tree();
 			Tree(int max_depth, int landmark_index, Forest* forest);
@@ -34,7 +34,7 @@ namespace lbf {
 							cv::Mat_<int> &pixel_differences, 
 							std::vector<cv::Mat1d> &regression_targets);
 			int get_num_leaves();
-			void release_training_data();
+			int enumerate_nodes(Node* node);
 			Node* predict(cv::Mat1d &shape, cv::Mat1b &image);
 		};
 	}

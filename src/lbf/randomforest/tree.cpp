@@ -106,8 +106,20 @@ namespace lbf {
 			}
 			return node;
 		}
+		int Tree::enumerate_nodes(Node* node){
+			int count = 1;
+			if(node->_left != NULL){
+				count += enumerate_nodes(node->_left);
+			}			
+			if(node->_right != NULL){
+				count += enumerate_nodes(node->_right);
+			}
+			return count;	
+		}
 		template <class Archive>
 		void Tree::serialize(Archive &ar, unsigned int version){
+			ar & _max_depth;
+			ar & _autoincrement_leaf_index;
 			ar & _num_leaves;
 			ar & _landmark_index;
 			ar & _root;

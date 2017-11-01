@@ -146,6 +146,7 @@ namespace lbf {
 			_delta_shape.y /= _assigned_data_indices.size();
 		}
 		void Node::mark_as_leaf(int leaf_identifier, std::set<int> &data_indices, std::vector<cv::Mat1d> &regression_targets){
+			assert(0 <= leaf_identifier);
 			_is_leaf = true;
 			_leaf_identifier = leaf_identifier;
 			_assigned_data_indices = data_indices;

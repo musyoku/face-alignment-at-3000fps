@@ -8,7 +8,7 @@ install: ## Python用ライブラリをコンパイル
 	$(CC) -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 
 install_ubuntu: ## Python用ライブラリをコンパイル
-	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -fopenmp -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
+	$(CC) -Wl,--no-as-needed -Wno-deprecated $(INCLUDE) $(SOFLAGS) -o run/lbf.so src/python.cpp src/lbf/*.cpp src/lbf/randomforest/*.cpp src/python/*.cpp src/lbf/liblinear/*.cpp src/lbf/liblinear/blas/*.c $(LDFLAGS)
 
 check_includes:	## Python.hの場所を確認
 	python3-config --includes

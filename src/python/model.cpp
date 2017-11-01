@@ -195,6 +195,12 @@ namespace lbf {
 			ar & _forest_at_stage;
 			ar & _training_finished_at_stage;
 
+			for(auto forests: _forest_at_stage){
+				for(auto forest: forests){
+					// std::cout << forest->get_num_total_leaves() << std::endl;
+				}
+			}
+
 			int rows = 0;
 			int cols = 0;
 			ar & rows;

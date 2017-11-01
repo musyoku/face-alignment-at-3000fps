@@ -277,7 +277,9 @@ def main():
 					  num_landmarks=len(mean_shape),
 					  mean_shape_ndarray=mean_shape, 
 					  feature_radius=feature_radius)
-	model.save(args.model_filename)
+
+	# resume training
+	model.load(args.model_filename)
 
 	# training
 	trainer = lbf.trainer(dataset=dataset, 

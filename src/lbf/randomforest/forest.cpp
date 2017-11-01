@@ -15,7 +15,6 @@ namespace lbf {
 			_landmark_index = landmark_index;
 			_num_total_leaves = 0;
 
-			_trees.reserve(num_trees);
 			for(int n = 0;n < num_trees;n++){
 				Tree* tree = new Tree(tree_depth, _landmark_index, this);
 				_trees.push_back(tree);
@@ -70,6 +69,13 @@ namespace lbf {
 		}
 		int Forest::get_num_total_leaves(){
 			return _num_total_leaves;
+		}
+		int Forest::enumerate_num_total_leaves(){
+			for(int tree_index = 0;tree_index < get_num_trees();tree_index++){
+				Tree* tree = _trees[tree_index];
+				assert(tree->get_num_leaves() > 0);
+				_num_total_leaves += tree->get_num_leaves();
+			}
 		}
 		template <class Archive>
 		void Forest::serialize(Archive &ar, unsigned int version){

@@ -30,7 +30,7 @@ namespace lbf {
 			void train();
 			void train_stage(int stage);
 			void train_local_feature_mapping_functions(int stage);
-			struct liblinear::feature_node** train_global_linear_regression_at_stage(int stage);
+			void train_global_linear_regression_at_stage(int stage, struct liblinear::feature_node** binary_features);
 			void evaluate_stage(int stage);
 			cv::Mat1d project_current_estimated_shape(int augmented_data_index);
 			boost::python::numpy::ndarray python_get_current_estimated_shape(int augmented_data_index, bool transform);

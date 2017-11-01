@@ -143,7 +143,7 @@ int main(){
 	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
 	std::string filename = "lbf.model";
-	model->python_save(filename);
+	model->python_load(filename);
 	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
 	for(int stage = 0;stage < num_stages;stage++){
 		trainer->train_stage(stage);

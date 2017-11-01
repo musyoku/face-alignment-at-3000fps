@@ -97,12 +97,30 @@ namespace lbf {
 		}
 		void Trainer::train_stage(int stage){
 			cout << "training stage: " << (stage + 1) << " of " << _model->_num_stages << endl;
-			
-			train_local_feature_mapping_functions(stage);
-			struct liblinear::feature_node** binary_features = train_global_linear_regression_at_stage(stage);
 
-			_model->finish_training_at_stage(stage);
+			// local binary features
+			if(_model->_training_finished_at_stage[stage] == false){
+				train_local_feature_mapping_functions(stage);
+			}
+
+			cout << "generating binary features ..." << endl;
+			struct liblinear::feature_node** binary_features = new liblinear::feature_node*[_num_augmented_data];
+			#pragma omp parallel for
+			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
+
+				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
+				cv::Mat1d projected_shape = project_current_estimated_shape(augmented_data_index);
+
+				binary_features[augmented_data_index] = _model->compute_binary_features_at_stage(image, projected_shape, stage);
+			}
 			
+			// global linear regression
+			if(_model->_training_finished_at_stage[stage] == false){
+				train_global_linear_regression_at_stage(stage, binary_features);
+			}
+			
+			_model->finish_training_at_stage(stage);
+				
 			// predict shape
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
 
@@ -152,8 +170,7 @@ namespace lbf {
 			}
 			delete[] binary_features;
 		}
-		struct liblinear::feature_node** Trainer::train_global_linear_regression_at_stage(int stage){
-			//// setup liblinear
+		void Trainer::train_global_linear_regression_at_stage(int stage, struct liblinear::feature_node** binary_features){
 			int num_total_trees = 0;
 			int num_total_leaves = 0;
 			for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
@@ -163,17 +180,6 @@ namespace lbf {
 			}
 			cout << "#trees = " << num_total_trees << endl;
 			cout << "#features = " << num_total_leaves << endl;
-			struct liblinear::feature_node** binary_features = new liblinear::feature_node*[_num_augmented_data];
-
-			cout << "generating binary features ..." << endl;
-			#pragma omp parallel for
-			for(int augmented_data_index = 0;augmented_data_index < _num_augmented_data;augmented_data_index++){
-
-				cv::Mat1b &image = get_image_by_augmented_index(augmented_data_index);
-				cv::Mat1d projected_shape = project_current_estimated_shape(augmented_data_index);
-
-				binary_features[augmented_data_index] = _model->compute_binary_features_at_stage(image, projected_shape, stage);
-			}
 
 			struct liblinear::problem* problem = new struct liblinear::problem;
 			problem->l = _num_augmented_data;
@@ -239,8 +245,6 @@ namespace lbf {
 			delete[] targets;
 			delete problem;
 			delete parameter;
-
-			return binary_features;
 		}
 		void Trainer::train_local_feature_mapping_functions(int stage){
 			cout << "training local feature mapping functions ..." << endl;
