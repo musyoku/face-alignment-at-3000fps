@@ -189,7 +189,7 @@ namespace lbf {
 
 			struct liblinear::parameter* parameter = new struct liblinear::parameter;
 			parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
-			parameter->C = 1.0;
+			parameter->C = 0.0001;
 			parameter->p = 0;
 
 		    double** targets = new double*[_model->_num_landmarks];
