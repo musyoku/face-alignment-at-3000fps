@@ -262,6 +262,7 @@ def main():
 		cv2.line(mean_shape_image, (x - 4, y), (x + 4, y), white, 1)
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
 	cv2.imwrite("mean.jpg", mean_shape_image)
+	np.save("mean_shape.npy", mean_shape)
 
 	# initialize dataset
 	dataset = lbf.dataset(training_corpus=training_corpus, 

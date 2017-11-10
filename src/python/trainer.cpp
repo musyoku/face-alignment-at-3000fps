@@ -189,7 +189,7 @@ namespace lbf {
 
 			struct liblinear::parameter* parameter = new struct liblinear::parameter;
 			parameter->solver_type = liblinear::L2R_L2LOSS_SVR_DUAL;
-			parameter->C = 0.0001;
+			parameter->C = 0.00001;
 			parameter->p = 0;
 
 		    double** targets = new double*[_model->_num_landmarks];
@@ -471,58 +471,27 @@ namespace lbf {
 			Corpus* corpus = _dataset->_validation_corpus;
 			int num_data = corpus->get_num_images();
 			std::vector<double> average_error_at_stage(target_stage + 1);
-
 			for(int stage = 0;stage <= target_stage;stage++){
-				double average_error = 0;
+				average_error_at_stage[stage] = 0;	
+			}
 
-				for(int data_index = 0;data_index < num_data;data_index++){
+			for(int data_index = 0;data_index < num_data;data_index++){
 					cv::Mat1b &image = corpus->get_image(data_index);
-					cv::Mat1d estimated_shape = _model->_mean_shape.clone();
+					cv::Mat1d &target_shape = corpus->get_normalized_shape(data_index);
 					cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
 					cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
-
-					assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
-					assert(rotation_inv.rows == 2 && rotation_inv.cols == 2);
-					assert(_model->_training_finished_at_stage[stage] == true);
-
-					// unnormalize initial shape
-					cv::Mat1d unnormalized_estimated_shape = utils::project_shape(estimated_shape, rotation_inv, shift_inv_point);
-
-					// compute binary features
-					struct liblinear::feature_node* binary_features = _model->compute_binary_features_at_stage(image, unnormalized_estimated_shape, stage);
-					cv::Mat1d &target_shape = corpus->get_normalized_shape(data_index);
-					assert(target_shape.rows == _model->_num_landmarks && target_shape.cols == 2);
-					double error = 0;
-
-					for(int landmark_index = 0;landmark_index < _model->_num_landmarks;landmark_index++){
-
-						struct liblinear::model* model_x = _model->get_linear_model_x_at(stage, landmark_index);
-						struct liblinear::model* model_y = _model->get_linear_model_y_at(stage, landmark_index);
-
-						assert(model_x != NULL);
-						assert(model_y != NULL);
-
-						double delta_x = liblinear::predict(model_x, binary_features);
-						double delta_y = liblinear::predict(model_y, binary_features);
-
-						// update shape
-						estimated_shape(landmark_index, 0) += delta_x;
-						estimated_shape(landmark_index, 1) += delta_y;
-
-						// compute error
-						double error_x = target_shape(landmark_index, 0) - estimated_shape(landmark_index, 0);
-						double error_y = target_shape(landmark_index, 1) - estimated_shape(landmark_index, 1);
-						error += std::sqrt(error_x * error_x + error_y * error_y);
-					}
+					cv::Mat1d shift_inv = cv::point_to_mat(shift_inv_point);
 					double pupil_distance = corpus->get_normalized_pupil_distance(data_index);
-					assert(pupil_distance > 0);
-					average_error += error / _model->_num_landmarks / pupil_distance * 100;
-
-					delete[] binary_features;
-				}
-	
-				average_error_at_stage[stage] = average_error / num_data;				
+					std::vector<double> error_at_stage = _model->compute_error(image, target_shape, rotation_inv, shift_inv, pupil_distance);
+					assert(error_at_stage.size() >= target_stage);
+					for(int stage = 0;stage <= target_stage;stage++){
+						average_error_at_stage[stage] += error_at_stage[stage];
+					}
 			}
+			for(int stage = 0;stage <= target_stage;stage++){
+				average_error_at_stage[stage] /= num_data;	
+			}
+
 			std::cout << "validation error: " << std::endl;
 			for(int stage = 0;stage < average_error_at_stage.size();stage++){
 				std::cout << "	stage " << stage << ": " << average_error_at_stage[stage] << " %" << std::endl;
