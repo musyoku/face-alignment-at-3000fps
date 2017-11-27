@@ -94,6 +94,9 @@ namespace lbf {
 				exit(0);
 			}
 		}
+		void Model::set_num_stages(int num_stages){
+			_num_stages = num_stages;
+		}
 		void Model::finish_training_at_stage(int stage){
 			assert(stage < _num_stages);
 			_training_finished_at_stage[stage] = true;

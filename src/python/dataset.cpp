@@ -6,13 +6,12 @@ using std::endl;
 
 namespace lbf {
 	namespace python {
-		Dataset::Dataset(Corpus* training_corpus, Corpus* validation_corpus, int augmentation_size){
+		Dataset::Dataset(Corpus* corpus, int augmentation_size){
 			_augmentation_size = augmentation_size;
-			_training_corpus = training_corpus;
-			_validation_corpus = validation_corpus;
+			_corpus = corpus;
 
 			// sample shapes to augment data
-			int num_training_images = training_corpus->get_num_images();
+			int num_training_images = corpus->get_num_images();
 			_augmented_initial_shape_indices_of_data.reserve(num_training_images);
 
 			for(int data_index = 0;data_index < num_training_images;data_index++){
@@ -30,11 +29,8 @@ namespace lbf {
 				_augmented_initial_shape_indices_of_data.push_back(initial_shape_indices);
 			}
 		}
-		int Dataset::get_num_training_images(){
-			return _training_corpus->get_num_images();
-		}
-		int Dataset::get_num_validation_images(){
-			return _validation_corpus->get_num_images();
+		int Dataset::get_num_images(){
+			return _corpus->get_num_images();
 		}
 	}
 }

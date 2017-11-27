@@ -36,9 +36,10 @@ namespace lbf {
 			Model(std::string filename);
 			~Model();
 			randomforest::Forest* get_forest(int stage, int landmark_index);
-			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_x_at(int stage, int landmark_index);
 			lbf::liblinear::model* get_linear_model_y_at(int stage, int landmark_index);
+			void set_linear_models(lbf::liblinear::model* model_x, lbf::liblinear::model* model_y, int stage, int landmark_index);
+			void set_num_stages(int num_stages);
 			void finish_training_at_stage(int stage);
 			bool python_save(std::string filename);
 			bool python_load(std::string filename);

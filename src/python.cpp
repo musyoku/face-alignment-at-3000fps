@@ -21,9 +21,6 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("get_normalized_pupil_distance", &Corpus::get_normalized_pupil_distance)
 	.def("add", &Corpus::add);
 
-	boost::python::class_<Dataset>("dataset", boost::python::init<Corpus*, Corpus*, int>((args("training_corpus", "validation_corpus", "augmentation_size"))))
-	.def("get_num_training_images", &Dataset::get_num_training_images);
-	
 	boost::python::class_<Model>("model", boost::python::init<int, int, int, int, np::ndarray, boost::python::list>((args("num_stages", "num_trees_per_forest", "tree_depth", "num_landmarks", "mean_shape_ndarray", "feature_radius"))))
 	.def(boost::python::init<std::string>())
 	.def("estimate_shape", &Model::python_estimate_shape)
@@ -31,10 +28,11 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("estimate_shape_using_initial_shape", &Model::python_estimate_shape_using_initial_shape)
 	.def("get_mean_shape", &Model::python_get_mean_shape)
 	.def("compute_error", &Model::python_compute_error)
+	.def("set_num_stages", &Model::set_num_stages)
 	.def("save", &Model::python_save)
 	.def("load", &Model::python_load);
 
-	boost::python::class_<Trainer>("trainer", boost::python::init<Dataset*, Model*, int>((args("dataset", "model", "num_features_to_sample"))))
+	boost::python::class_<Trainer>("trainer", boost::python::init<Corpus*, Corpus*, Model*, int, int>((args("dataset", "model", "num_features_to_sample"))))
 	.def("get_current_estimated_shape", &Trainer::python_get_current_estimated_shape, ((args("data_index"), arg("transform")=true)))
 	.def("get_target_shape", &Trainer::python_get_target_shape, ((args("data_index"), arg("transform")=true)))
 	.def("get_validation_estimated_shape", &Trainer::python_get_validation_estimated_shape, ((args("data_index"), arg("transform")=true)))

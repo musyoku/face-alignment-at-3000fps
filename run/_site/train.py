@@ -264,6 +264,11 @@ def main():
 	cv2.imwrite("mean.jpg", mean_shape_image)
 	np.save("mean_shape.npy", mean_shape)
 
+	# initialize dataset
+	dataset = lbf.dataset(training_corpus=training_corpus, 
+						  validation_corpus=validation_corpus,
+						  augmentation_size=args.augmentation_size)
+
 	# initlaize model
 	feature_radius = [0.29, 0.21, 0.16, 0.12, 0.08]
 	assert len(feature_radius) == args.num_stages
@@ -278,11 +283,9 @@ def main():
 	model.load(args.model_filename)
 
 	# training
-	trainer = lbf.trainer(training_corpus=training_corpus,
-						  validation_corpus=validation_corpus,
+	trainer = lbf.trainer(dataset=dataset, 
 						  model=model,
-						  num_features_to_sample=args.num_training_features,
-						  augmentation_size=args.augmentation_size)
+						  num_features_to_sample=args.num_training_features)
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)

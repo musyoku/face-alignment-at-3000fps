@@ -187,7 +187,7 @@ def read_images_and_shapes(targets):
 	return image_list, shape_list, mean_shape
 
 def build_corpus(targets, mean_shape=None):
-	corpus = lbf.corpus()
+	corpus = []
 	image_list, shape_list, _mean_shape = read_images_and_shapes(targets)
 	if mean_shape is None:
 		mean_shape = _mean_shape
@@ -216,24 +216,22 @@ def build_corpus(targets, mean_shape=None):
 		left_eye_center = np.sum(shape[43:45] + shape[46:48], axis=0) / 4
 		pupil_distance = np.sqrt(np.sum((right_eye_center - left_eye_center) ** 2))
 
-		corpus.add(image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance)
+		corpus.append((image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance))
 
 	return corpus, mean_shape
 
-def imwrite(image, shape, filename):
-	image_height = image.shape[0]
-	image_width = image.shape[1]
-	if image.ndim == 2:
-		image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+def imwrite(image_gray, shape, filename):
+	image_height = image_gray.shape[0]
+	image_width = image_gray.shape[1]
+	image_bgr = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2BGR)
 	color = (0, 255, 255)
-	for (x, y) in shape:
+	for i, (x, y) in enumerate(shape):
 		x = int(image_width / 2 + x * image_width / 2)
 		y = int(image_height / 2 + y * image_height / 2)
 		
-		cv2.line(image, (x - 4, y), (x + 4, y), color, 1)
-		cv2.line(image, (x, y - 4), (x, y + 4), color, 1)
-
-	cv2.imwrite(os.path.join(args.debug_directory, filename), image)
+		cv2.line(image_bgr, (x - 4, y), (x + 4, y), color, 1)
+		cv2.line(image_bgr, (x, y - 4), (x, y + 4), color, 1)
+	cv2.imwrite(os.path.join(args.debug_directory, filename), image_bgr)
 
 def main():
 	assert args.dataset_directory is not None
@@ -245,13 +243,11 @@ def main():
 
 	# build corpus
 	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
-	# training_targets = ["afw"]
 	validation_targets = ["helen/testset", "lfpw/testset"]
-	# validation_targets = ["ibug"]
 	training_corpus, mean_shape = build_corpus(training_targets)
 	validation_corpus, _ = build_corpus(validation_targets, mean_shape=mean_shape)
-	print("#images (train):", training_corpus.get_num_images())
-	print("#images (val):", validation_corpus.get_num_images())
+	print("#images (train):", len(training_corpus))
+	print("#images (val):", len(validation_corpus))
 
 	# save mean shape
 	mean_shape_image = np.zeros((500, 500), dtype=np.uint8)
@@ -262,39 +258,36 @@ def main():
 		cv2.line(mean_shape_image, (x - 4, y), (x + 4, y), white, 1)
 		cv2.line(mean_shape_image, (x, y - 4), (x, y + 4), white, 1)
 	cv2.imwrite("mean.jpg", mean_shape_image)
-	np.save("mean_shape.npy", mean_shape)
 
-	# initlaize model
-	feature_radius = [0.29, 0.21, 0.16, 0.12, 0.08]
-	assert len(feature_radius) == args.num_stages
-	model = lbf.model(num_stages=args.num_stages,
-					  num_trees_per_forest=args.num_trees_per_forest,
-					  tree_depth=args.tree_depth,
-					  num_landmarks=len(mean_shape),
-					  mean_shape_ndarray=mean_shape, 
-					  feature_radius=feature_radius)
+	# model
+	model = lbf.model(args.model_filename)
 
-	# resume training
-	model.load(args.model_filename)
+	# training data
+	print("#", len(training_corpus))
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(training_corpus):
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv, pupil_distance)
+		print(error)
+		if args.debug_directory is not None:
+			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "train_{}.jpg".format(data_index)))
 
-	# training
-	trainer = lbf.trainer(training_corpus=training_corpus,
-						  validation_corpus=validation_corpus,
-						  model=model,
-						  num_features_to_sample=args.num_training_features,
-						  augmentation_size=args.augmentation_size)
-
-	for stage in range(args.num_stages):
-		trainer.train_stage(stage)
-		trainer.evaluate_stage(stage)
-		model.save(args.model_filename)
+	# validation data
+	print("#", len(validation_corpus))
+	for data_index, (image, shape, normalized_shape, rotation, rotation_inv, shift, shift_inv, pupil_distance) in enumerate(validation_corpus):
+		error = model.compute_error(image, normalized_shape, rotation_inv, shift_inv, pupil_distance)
+		print(error)
+		if args.debug_directory is not None:
+			shape = model.estimate_shape_by_translation(image, rotation_inv, shift_inv)
+			shape = np.transpose(np.dot(rotation_inv, shape.T) + shift_inv[:, None], (1, 0))
+			imwrite(image.copy(), shape, os.path.join(args.debug_directory, "validation_{}.jpg".format(data_index)))
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dataset-directory", "-dataset", type=str, default=None)
 	parser.add_argument("--debug-directory", "-debug", type=str, default=None)
 	parser.add_argument("--model-filename", "-model", type=str, default="lbf.model")
-	parser.add_argument("--max-image-size", "-size", type=int, default=300)
+	parser.add_argument("--max-image-size", "-size", type=int, default=500)
 	parser.add_argument("--augmentation-size", "-augment", type=int, default=20)
 	parser.add_argument("--num-stages", "-stages", type=int, default=5)
 	parser.add_argument("--num-trees-per-forest", "-trees", type=int, default=17)

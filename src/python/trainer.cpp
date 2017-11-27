@@ -18,14 +18,15 @@ namespace np = boost::python::numpy;
 
 namespace lbf {
 	namespace python {
-		Trainer::Trainer(Dataset* dataset, Model* model, int num_features_to_sample){
-			_dataset = dataset;
+		Trainer::Trainer(Corpus* training_corpus, Corpus* validation_corpus, Model* model, int augmentation_size, int num_features_to_sample){
+			_training_corpus = training_corpus;
+			_validation_corpus = validation_corpus;
 			_model = model;
 			_num_features_to_sample = num_features_to_sample;
+			_augmentation_size = augmentation_size;
 
-			Corpus* corpus = _dataset->_training_corpus;
-			int num_data = corpus->_images.size();
-			_num_augmented_data = (dataset->_augmentation_size + 1) * num_data;
+			int num_data = training_corpus->_images.size();
+			_num_augmented_data = (_augmentation_size + 1) * num_data;
 
 			// sample feature locations
 			for(int stage = 0;stage < model->_num_stages;stage++){
@@ -54,7 +55,6 @@ namespace lbf {
 
 			// set initial shape
 			int num_landmarks = model->_num_landmarks;
-			int augmentation_size = _dataset->_augmentation_size;
 
 			_augmented_estimated_shapes.resize(_num_augmented_data);
 			_augmented_target_shapes.resize(_num_augmented_data);
@@ -63,19 +63,21 @@ namespace lbf {
 			// normalized shape
 			for(int data_index = 0;data_index < num_data;data_index++){
 				_augmented_estimated_shapes[data_index] = _model->_mean_shape.clone();	// make a copy
-				_augmented_target_shapes[data_index] = corpus->get_normalized_shape(data_index);
+				_augmented_target_shapes[data_index] = training_corpus->get_normalized_shape(data_index);
 				_augmented_indices_to_data_index[data_index] = data_index;
 			}
 
 			// augmented shapes
 			for(int data_index = 0;data_index < num_data;data_index++){
-				std::vector<int> &initial_shape_indices = _dataset->_augmented_initial_shape_indices_of_data[data_index];
-				assert(initial_shape_indices.size() == augmentation_size);
-				for(int n = 0;n < augmentation_size;n++){
+
+				for(int n = 0;n < _augmentation_size;n++){
+					int shape_index = 0;
+					do {
+						shape_index = sampler::uniform_int(0, num_data - 1);
+					} while(shape_index == data_index);	// reject same shape
 					int augmented_data_index = (n + 1) * num_data + data_index;
-					int shape_index = initial_shape_indices[n];
-					_augmented_estimated_shapes[augmented_data_index] = corpus->get_normalized_shape(shape_index).clone();	// make a copy
-					_augmented_target_shapes[augmented_data_index] = corpus->get_normalized_shape(data_index);
+					_augmented_estimated_shapes[augmented_data_index] = training_corpus->get_normalized_shape(shape_index).clone();	// make a copy
+					_augmented_target_shapes[augmented_data_index] = training_corpus->get_normalized_shape(data_index);
 					_augmented_indices_to_data_index[augmented_data_index] = data_index;
 				}
 			}
@@ -84,7 +86,7 @@ namespace lbf {
 		cv::Mat1b & Trainer::get_image_by_augmented_index(int augmented_data_index){
 			assert(augmented_data_index < _augmented_indices_to_data_index.size());
 			int data_index = get_data_index_by_augmented_index(augmented_data_index);
-			return _dataset->_training_corpus->_images[data_index];
+			return _training_corpus->_images[data_index];
 		}
 		int Trainer::get_data_index_by_augmented_index(int augmented_data_index){
 			assert(augmented_data_index < _augmented_indices_to_data_index.size());
@@ -157,7 +159,7 @@ namespace lbf {
 					error += std::sqrt(error_x * error_x + error_y * error_y);
 				}
 				int data_index = _augmented_indices_to_data_index[augmented_data_index];
-				double pupil_distance = _dataset->_training_corpus->get_normalized_pupil_distance(data_index);
+				double pupil_distance = _training_corpus->get_normalized_pupil_distance(data_index);
 				assert(pupil_distance > 0);
 				average_error += error / _model->_num_landmarks / pupil_distance * 100;
 			}
@@ -256,14 +258,14 @@ namespace lbf {
 			cout << endl;
 		}
 		void Trainer::_train_forest(int stage, int landmark_index){
-			Corpus* corpus = _dataset->_training_corpus;
+			Corpus* corpus = _training_corpus;
 			Forest* forest = _model->get_forest(stage, landmark_index);
 
 			std::vector<FeatureLocation> sampled_feature_locations = _sampled_feature_locations_at_stage[stage];
 			assert(sampled_feature_locations.size() == _num_features_to_sample);
 
 			int num_data = corpus->_images.size();
-			int augmentation_size = _dataset->_augmentation_size;
+			int augmentation_size = _augmentation_size;
 
 			// pixel differece features
 			cv::Mat_<int> pixel_differences(_num_features_to_sample, _num_augmented_data);
@@ -344,7 +346,7 @@ namespace lbf {
 
 			assert(shape.rows == _model->_num_landmarks && shape.cols == 2);
 
-			Corpus* corpus = _dataset->_training_corpus;
+			Corpus* corpus = _training_corpus;
 			int data_index = get_data_index_by_augmented_index(augmented_data_index);
 
 			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
@@ -358,7 +360,7 @@ namespace lbf {
 			assert(shape.rows == _model->_num_landmarks && shape.cols == 2);
 
 			if(transform){
-				Corpus* corpus = _dataset->_training_corpus;
+				Corpus* corpus = _training_corpus;
 				int data_index = get_data_index_by_augmented_index(augmented_data_index);
 
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
@@ -411,7 +413,7 @@ namespace lbf {
 			}
 
 			if(transform){
-				Corpus* corpus = _dataset->_training_corpus;
+				Corpus* corpus = _training_corpus;
 				int data_index = get_data_index_by_augmented_index(augmented_data_index);
 
 				cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
@@ -421,16 +423,15 @@ namespace lbf {
 			return utils::cv_matrix_to_ndarray_matrix(shape);
 		}
 		boost::python::numpy::ndarray Trainer::python_get_validation_estimated_shape(int data_index, bool transform){
-			Corpus* corpus = _dataset->_validation_corpus;
-			assert(data_index < corpus->get_num_images());
+			assert(data_index < _validation_corpus->get_num_images());
 
-			cv::Mat1b &image = corpus->get_image(data_index);
+			cv::Mat1b &image = _validation_corpus->get_image(data_index);
 			cv::Mat1d estimated_shape = _model->_mean_shape.clone();
 			
 			assert(estimated_shape.rows == _model->_num_landmarks && estimated_shape.cols == 2);
 
-			cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-			cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
+			cv::Mat1d &rotation_inv = _validation_corpus->get_rotation_inv(data_index);
+			cv::Point2d &shift_inv_point = _validation_corpus->get_shift_inv(data_index);
 
 			for(int stage = 0;stage < _model->_num_stages;stage++){
 				if(_model->_training_finished_at_stage[stage] == false){
@@ -468,20 +469,19 @@ namespace lbf {
 		void Trainer::evaluate_stage(int target_stage){
 			cout << "validation stage: " << (target_stage + 1) << " of " << _model->_num_stages << endl;
 
-			Corpus* corpus = _dataset->_validation_corpus;
-			int num_data = corpus->get_num_images();
+			int num_data = _validation_corpus->get_num_images();
 			std::vector<double> average_error_at_stage(target_stage + 1);
 			for(int stage = 0;stage <= target_stage;stage++){
 				average_error_at_stage[stage] = 0;	
 			}
 
 			for(int data_index = 0;data_index < num_data;data_index++){
-					cv::Mat1b &image = corpus->get_image(data_index);
-					cv::Mat1d &target_shape = corpus->get_normalized_shape(data_index);
-					cv::Mat1d &rotation_inv = corpus->get_rotation_inv(data_index);
-					cv::Point2d &shift_inv_point = corpus->get_shift_inv(data_index);
+					cv::Mat1b &image = _validation_corpus->get_image(data_index);
+					cv::Mat1d &target_shape = _validation_corpus->get_normalized_shape(data_index);
+					cv::Mat1d &rotation_inv = _validation_corpus->get_rotation_inv(data_index);
+					cv::Point2d &shift_inv_point = _validation_corpus->get_shift_inv(data_index);
 					cv::Mat1d shift_inv = cv::point_to_mat(shift_inv_point);
-					double pupil_distance = corpus->get_normalized_pupil_distance(data_index);
+					double pupil_distance = _validation_corpus->get_normalized_pupil_distance(data_index);
 					std::vector<double> error_at_stage = _model->compute_error(image, target_shape, rotation_inv, shift_inv, pupil_distance);
 					assert(error_at_stage.size() >= target_stage);
 					for(int stage = 0;stage <= target_stage;stage++){

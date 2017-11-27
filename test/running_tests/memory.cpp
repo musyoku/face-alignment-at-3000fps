@@ -105,6 +105,7 @@ Corpus* build_corpus(std::string directory, cv::Mat1d &mean_shape, int num_data)
 		corpus->_rotation_inv.push_back(rotation_inv);
 		corpus->_shift.push_back(shift);
 		corpus->_shift_inv.push_back(shift_inv);
+		corpus->_normalized_pupil_distances.push_back(1.0);
 
 		mean_shape += shape;
 	}
@@ -117,8 +118,8 @@ void run_training_loop(){
 	std::string directory = "/media/stark/HDD/sandbox/face-alignment/cpp";
 	cv::Mat1d mean_shape_train(68, 2);
 	cv::Mat1d mean_shape_dev(68, 2);
-	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 30);
-	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev, 5);
+	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 500);
+	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev, 100);
 
 	boost::python::tuple size = boost::python::make_tuple(mean_shape_train.rows, mean_shape_train.cols);
 	np::ndarray mean_shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
@@ -137,18 +138,17 @@ void run_training_loop(){
 	std::vector<double> feature_radius{0.29, 0.21, 0.16, 0.12, 0.08, 0.04};
 
 	cout << "#images " << training_corpus->get_num_images() << endl;
+	cout << "#images " << validation_corpus->get_num_images() << endl;
 
-	Dataset* dataset = new Dataset(training_corpus, validation_corpus, augmentation_size);
 	Model* model = new Model(num_stages, num_trees_per_forest, tree_depth, num_landmarks, mean_shape_ndarray, feature_radius);
 	std::string filename = "lbf.model";
 	model->python_save(filename);
 
-	Trainer* trainer = new Trainer(dataset, model, num_features_to_sample);
+	Trainer* trainer = new Trainer(training_corpus, validation_corpus, model, num_features_to_sample, augmentation_size);
 	for(int stage = 0;stage < 2;stage++){
 		trainer->train_local_feature_mapping_functions(stage);
 	}
 
-	delete dataset;
 	delete training_corpus;
 	delete validation_corpus;
 	delete model;

@@ -10,6 +10,7 @@ namespace lbf {
 		private:
 			int _num_features_to_sample;
 			int _num_augmented_data;
+			int _augmentation_size;
 			std::vector<cv::Mat1d> _augmented_estimated_shapes;		// contains normalized shape
 			std::vector<cv::Mat1d> _augmented_target_shapes;		// contains normalized shape
 			std::vector<int> _augmented_indices_to_data_index;
@@ -24,9 +25,10 @@ namespace lbf {
 			cv::Mat1b & get_image_by_augmented_index(int augmented_data_index);
 			int get_data_index_by_augmented_index(int augmented_data_index);
 		public:
-			Dataset* _dataset;
+			Corpus* _training_corpus;
+			Corpus* _validation_corpus;
 			Model* _model;
-			Trainer(Dataset* dataset, Model* model, int num_features_to_sample);
+			Trainer(Corpus* training_dataset, Corpus* validation_dataset, Model* model, int augmentation_size, int num_features_to_sample);
 			void train();
 			void train_stage(int stage);
 			void train_local_feature_mapping_functions(int stage);
