@@ -25,6 +25,9 @@ namespace lbf {
 			_num_features_to_sample = num_features_to_sample;
 			_augmentation_size = augmentation_size;
 
+			std::cout << "augmentation_size = " << augmentation_size << std::endl;
+			std::cout << "num_features_to_sample = " << num_features_to_sample << std::endl;
+
 			int num_data = training_corpus->_images.size();
 			_num_augmented_data = (_augmentation_size + 1) * num_data;
 

@@ -245,9 +245,7 @@ def main():
 
 	# build corpus
 	training_targets = ["afw", "ibug", "helen/trainset", "lfpw/trainset"]
-	# training_targets = ["afw"]
 	validation_targets = ["helen/testset", "lfpw/testset"]
-	# validation_targets = ["ibug"]
 	training_corpus, mean_shape = build_corpus(training_targets)
 	validation_corpus, _ = build_corpus(validation_targets, mean_shape=mean_shape)
 	print("#images (train):", training_corpus.get_num_images())
@@ -281,8 +279,8 @@ def main():
 	trainer = lbf.trainer(training_corpus=training_corpus,
 						  validation_corpus=validation_corpus,
 						  model=model,
-						  num_features_to_sample=args.num_training_features,
-						  augmentation_size=args.augmentation_size)
+						  augmentation_size=args.augmentation_size,
+						  num_features_to_sample=args.num_training_features)
 
 	for stage in range(args.num_stages):
 		trainer.train_stage(stage)

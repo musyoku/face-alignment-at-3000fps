@@ -32,7 +32,7 @@ BOOST_PYTHON_MODULE(lbf){
 	.def("save", &Model::python_save)
 	.def("load", &Model::python_load);
 
-	boost::python::class_<Trainer>("trainer", boost::python::init<Corpus*, Corpus*, Model*, int, int>((args("dataset", "model", "num_features_to_sample"))))
+	boost::python::class_<Trainer>("trainer", boost::python::init<Corpus*, Corpus*, Model*, int, int>((args("training_corpus", "validation_corpus", "model", "augmentation_size", "num_features_to_sample"))))
 	.def("get_current_estimated_shape", &Trainer::python_get_current_estimated_shape, ((args("data_index"), arg("transform")=true)))
 	.def("get_target_shape", &Trainer::python_get_target_shape, ((args("data_index"), arg("transform")=true)))
 	.def("get_validation_estimated_shape", &Trainer::python_get_validation_estimated_shape, ((args("data_index"), arg("transform")=true)))

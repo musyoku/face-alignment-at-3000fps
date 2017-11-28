@@ -31,6 +31,7 @@ namespace lbf {
 			double selected_feature_index = -1;
 			assert(_left_indices.size() == 0);
 			assert(_right_indices.size() == 0);
+			std::cout << _selected_feature_indices_of_all_nodes.size() << ", " << num_features << std::endl;
 			assert(_selected_feature_indices_of_all_nodes.size() < num_features);
 
 			// std::vector<int> pixel_differences_of_data;
@@ -43,7 +44,6 @@ namespace lbf {
 
 			for(int feature_index = 0;feature_index < num_features;feature_index++){
 				if(_selected_feature_indices_of_all_nodes.find(feature_index) != _selected_feature_indices_of_all_nodes.end()){
-					std::cout << "continue" << std::endl;
 					continue;
 				}
 				// select threshold

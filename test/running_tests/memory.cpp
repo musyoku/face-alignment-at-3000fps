@@ -114,12 +114,12 @@ Corpus* build_corpus(std::string directory, cv::Mat1d &mean_shape, int num_data)
 }
 
 void run_training_loop(){
-	// std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp";
-	std::string directory = "/media/stark/HDD/sandbox/face-alignment/cpp";
+	std::string directory = "/media/aibo/e9ef3312-af31-4750-a797-18efac730bc5/sandbox/face-alignment/cpp";
+	// std::string directory = "/media/stark/HDD/sandbox/face-alignment/cpp";
 	cv::Mat1d mean_shape_train(68, 2);
 	cv::Mat1d mean_shape_dev(68, 2);
-	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 500);
-	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev, 100);
+	Corpus* training_corpus = build_corpus(directory + "/train/", mean_shape_train, 3229);
+	Corpus* validation_corpus = build_corpus(directory + "/dev/", mean_shape_dev, 553);
 
 	boost::python::tuple size = boost::python::make_tuple(mean_shape_train.rows, mean_shape_train.cols);
 	np::ndarray mean_shape_ndarray = np::zeros(size, np::dtype::get_builtin<double>());
@@ -144,10 +144,11 @@ void run_training_loop(){
 	std::string filename = "lbf.model";
 	model->python_save(filename);
 
-	Trainer* trainer = new Trainer(training_corpus, validation_corpus, model, num_features_to_sample, augmentation_size);
-	for(int stage = 0;stage < 2;stage++){
-		trainer->train_local_feature_mapping_functions(stage);
-	}
+	Trainer* trainer = new Trainer(training_corpus, validation_corpus, model, augmentation_size, num_features_to_sample);
+	trainer->train();
+	// for(int stage = 0;stage < 2;stage++){
+	// 	trainer->train_local_feature_mapping_functions(stage);
+	// }
 
 	delete training_corpus;
 	delete validation_corpus;
